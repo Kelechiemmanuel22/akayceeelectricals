@@ -21,17 +21,17 @@ export type Product = {
 
 export const categories: Category[] = [
   {
-    id: 'air-conditioners',
-    name: 'Air Conditioners',
+    id: 'cooling',
+    name: 'Cooling',
     shortName: 'Cooling',
-    description: 'Split, standing, inverter and low-voltage cooling solutions.',
+    description: 'Air conditioners, standing fans and rechargeable cooling solutions for comfortable spaces.',
     image: '/assets/products/hisense-1-5hp-ac.jpg',
   },
   {
-    id: 'televisions',
-    name: 'Televisions & Home Theater',
-    shortName: 'Viewing',
-    description: 'Smart 4K UHD, QLED TVs and immersive home entertainment.',
+    id: 'entertainment',
+    name: 'Entertainment',
+    shortName: 'Entertainment',
+    description: 'Smart televisions, soundbars, speakers and immersive home-theatre options.',
     image: '/assets/products/samsung-65-qled-clean.jpg',
   },
   {
@@ -47,13 +47,6 @@ export const categories: Category[] = [
     shortName: 'Laundry',
     description: 'Front-load, top-load and twin-tub automatic washers.',
     image: '/assets/products/midea-washing-machine.jpg',
-  },
-  {
-    id: 'fans',
-    name: 'Rechargeable & Standing Fans',
-    shortName: 'Airflow',
-    description: 'Heavy-duty standing, ceiling, and rechargeable mist fans.',
-    image: '/assets/products/royal-standing-fan.jpg',
   },
   {
     id: 'lighting',
@@ -75,13 +68,6 @@ export const categories: Category[] = [
     shortName: 'Kitchen',
     description: 'Gas cookers, microwave ovens, blenders and dispensers.',
     image: '/assets/products/bruhm-microwave.jpg',
-  },
-  {
-    id: 'audio',
-    name: 'Audio Systems & Electronics',
-    shortName: 'Audio',
-    description: 'Bluetooth soundbars, home theater sets and stabilizers.',
-    image: '/assets/products/dolby-soundbar.jpg',
   },
 ]
 
@@ -146,7 +132,7 @@ export const products: Product[] = [
   {
     slug: 'hisense-1-5hp-inverter-split-ac',
     name: 'Hisense 1.5HP Inverter Split AC',
-    category: 'air-conditioners',
+    category: 'cooling',
     brand: 'Hisense',
     description: 'A 1.5HP inverter split air-conditioner example for bedrooms and medium-sized rooms. Confirm the exact model and package with the store.',
     specs: ['1.5HP capacity', 'Inverter model', 'Split-unit format', 'Confirm exact features on enquiry'],
@@ -156,7 +142,7 @@ export const products: Product[] = [
   {
     slug: 'midea-2hp-split-ac',
     name: 'Midea 2HP Split AC',
-    category: 'air-conditioners',
+    category: 'cooling',
     brand: 'Midea',
     description: 'A 2HP split air-conditioner example for larger rooms and shared spaces. Confirm the exact model and specifications with the store.',
     specs: ['2.0HP capacity', 'Split-unit format', 'For larger rooms', 'Confirm exact features on enquiry'],
@@ -166,7 +152,7 @@ export const products: Product[] = [
   {
     slug: 'lg-55-smart-4k-uhd-tv',
     name: 'LG 55-inch Smart 4K UHD TV',
-    category: 'televisions',
+    category: 'entertainment',
     brand: 'LG',
     description: 'A 55-inch smart television example for living rooms and entertainment spaces. Confirm the exact model, software and accessories with the store.',
     specs: ['55-inch screen', '4K UHD class', 'Smart TV format', 'Confirm exact features on enquiry'],
@@ -176,7 +162,7 @@ export const products: Product[] = [
   {
     slug: 'samsung-65-qled-smart-tv',
     name: 'Samsung 65-inch QLED 4K Smart TV',
-    category: 'televisions',
+    category: 'entertainment',
     brand: 'Samsung',
     description: 'A 65-inch smart television example for larger home-entertainment spaces. Confirm the exact model and specifications with the store.',
     specs: ['65-inch screen', '4K QLED class', 'Smart TV format', 'Confirm exact features on enquiry'],
@@ -206,7 +192,7 @@ export const products: Product[] = [
   {
     slug: 'royal-standing-fan',
     name: 'Royal Standing Fan',
-    category: 'fans',
+    category: 'cooling',
     brand: 'Royal',
     description: 'A standing-fan example for household and office use. Confirm fan size, controls and model features with the store.',
     specs: ['Standing-fan format', 'For household or office use', 'Multiple sizes may be available', 'Confirm exact features on enquiry'],
@@ -252,7 +238,7 @@ export const products: Product[] = [
   {
     slug: 'soundbar',
     name: 'Bluetooth Soundbar',
-    category: 'audio',
+    category: 'entertainment',
     brand: 'Generic',
     description: 'A soundbar example for home-entertainment setups. Confirm audio inputs, included accessories and exact model with the store.',
     specs: ['Home-entertainment audio', 'Bluetooth option', 'For TV setups', 'Confirm exact features on enquiry'],

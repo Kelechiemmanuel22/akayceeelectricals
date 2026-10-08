@@ -60,7 +60,7 @@ export async function fetchRemoteCatalogue(): Promise<RemoteCatalogue | null> {
   const error = categoryResult.error || brandResult.error || productResult.error || settingsResult.error
   if (error) throw error
 
-  const categories = ((categoryResult.data || []) as CategoryRow[]).map((row) => ({
+  const categories = ((categoryResult.data || []) as CategoryRow[]).filter((row) => row.id !== 'audio').map((row) => ({
     id: row.id,
     name: row.name,
     shortName: row.short_name,
@@ -79,7 +79,7 @@ export async function fetchRemoteCatalogue(): Promise<RemoteCatalogue | null> {
   const products = ((productResult.data || []) as ProductRow[]).map((row) => ({
     slug: row.slug,
     name: row.name,
-    category: row.category_id,
+    category: row.category_id === 'audio' ? 'televisions' : row.category_id,
     brand: row.brand_name,
     description: row.description,
     specs: row.specs || [],

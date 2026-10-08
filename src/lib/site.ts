@@ -14,10 +14,8 @@ export const whatsappHref = (subject = 'your products') =>
 
 export const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/products', label: 'Products' },
-  { to: '/about', label: 'About' },
+  { to: '/categories', label: 'Categories' },
   { to: '/services', label: 'Services' },
-  { to: '/request', label: 'Request a quote' },
   { to: '/contact', label: 'Contact' },
 ]
 

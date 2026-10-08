@@ -183,7 +183,7 @@ export function ProductDetailPage() {
                   More in {category.name}
                 </h2>
               </div>
-              <Link to={`/products?category=${category.id}`} className="button button-ghost button-compact hidden sm:inline-flex">
+              <Link to={`/category/${category.id}`} className="button button-ghost button-compact hidden sm:inline-flex">
                 View All {category.name}
               </Link>
             </div>

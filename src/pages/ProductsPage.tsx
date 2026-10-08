@@ -67,17 +67,14 @@ export function ProductsPage() {
 
   return (
     <>
-      <section className="catalogue-hero">
+      <section className="catalogue-hero catalogue-lifestyle-hero">
+        <img className="catalogue-lifestyle-image" src="/assets/business/family-lifestyle-hero-light.jpg" alt="Bright comfortable modern family home" />
+        <div className="catalogue-lifestyle-overlay" />
         <div className="container catalogue-hero-grid">
-          <div>
+          <div className="catalogue-lifestyle-copy">
             <p className="eyebrow text-gold-light">A Kaycee catalogue</p>
             <h1>Designed for your home.<br /><span>Ready for your project.</span></h1>
             <p>Browse appliances, electronics and electrical materials, then ask the store team to confirm current pricing and availability.</p>
-          </div>
-          <div className="catalogue-hero-images" aria-hidden="true">
-            <img src="/assets/products/hisense-1-5hp-ac.jpg" alt="" />
-            <img src="/assets/products/lg-55-4k-tv.jpg" alt="" />
-            <img src="/assets/products/midea-washing-machine.jpg" alt="" />
           </div>
         </div>
       </section>

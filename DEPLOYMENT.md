@@ -1,36 +1,20 @@
 # Deployment notes
 
-## What can be deployed now
+## Vercel setup
 
-The public website is a static React catalogue and lead-generation site. It needs no backend to run: product enquiries open WhatsApp, and contact, directions, email and Instagram links work directly from the browser.
+Import `Kelechiemmanuel22/akayceeelectricals` into Vercel. The repository already includes the SPA rewrite configuration. Use `npm run build` and the `dist` output directory.
 
-Build it with:
+Add these variables to the Vercel project for Production, Preview and Development:
 
-```bash
-npm install
-npm run build
+```text
+VITE_SUPABASE_URL=https://hzqkoovmqkfoxsoqpegx.supabase.co
+VITE_SUPABASE_ANON_KEY=your-public-Supabase-publishable-key
+VITE_IMAGE_UPLOAD_PROVIDER=cloudinary
 ```
 
-Upload the generated `dist` folder to a static host such as Netlify, Vercel or Cloudflare Pages. Configure the host to serve `index.html` for unknown paths so direct visits to `/products`, `/about`, and product URLs work correctly.
+The real values already exist in `.env.local`, which is intentionally ignored by Git. Copy them into Vercel’s Environment Variables screen; do not upload `.env.local`.
 
-For local production preview:
-
-```bash
-npm run preview
-```
-
-## Admin decision
-
-The previous browser-only admin prototype has been intentionally excluded from the public release. A hard-coded PIN and browser `localStorage` are not secure, and any edits would exist only on the device that made them.
-
-Use a backend before bringing back a real admin area. It should provide:
-
-- authenticated, role-based admin access;
-- a shared product, category and brand database;
-- secure image storage and upload handling;
-- server-side validation, backups and an audit trail.
-
-Supabase or Firebase would be a good lightweight fit for this project. That is a separate implementation phase because it requires the business owner’s chosen hosting account, admin users and data-management workflow.
+Cloudinary and Resend secret keys remain in Supabase Edge Function Secrets. Never add those secrets to Vercel or expose them through a `VITE_` variable.
 
 ## Before publishing
 
@@ -38,3 +22,5 @@ Supabase or Firebase would be a good lightweight fit for this project. That is a
 - Confirm every contact detail, social link and location with the business owner.
 - Confirm pricing, delivery, installation and warranty information directly with the business before adding those claims to the site.
 - Add the production domain to the Open Graph metadata once it is known.
+- Add the deployed URL to Supabase Authentication URL Configuration.
+- Verify the final domain with Resend before enabling newsletter sends.

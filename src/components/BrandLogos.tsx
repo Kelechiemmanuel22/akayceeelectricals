@@ -197,6 +197,14 @@ export function BrandLogo({
   variant?: 'light' | 'dark' | 'auto'
 }) {
   const { getBrandByName } = useCatalog()
+  const normalized = Object.keys(brandImageMap).find((k) => k.toLowerCase() === brand.toLowerCase())
+
+  // These supplied raster files have transparent/white variants that can
+  // disappear on light surfaces. Their vector marks stay legible everywhere.
+  if (normalized === 'Royal' || normalized === 'Bruhm' || normalized === 'Polystar') {
+    const ReliableLogo = brandLogoMap[normalized]
+    return <ReliableLogo className={className} />
+  }
 
   let resolvedLogo = variant === 'dark' && logoDark ? logoDark : logo
 
@@ -218,7 +226,6 @@ export function BrandLogo({
     )
   }
 
-  const normalized = Object.keys(brandImageMap).find((k) => k.toLowerCase() === brand.toLowerCase())
   const brandData = normalized ? brandImageMap[normalized] : null
 
   if (brandData) {

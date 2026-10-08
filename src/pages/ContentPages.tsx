@@ -59,7 +59,9 @@ function PageHero({
 }) {
   return (
     <section className="page-hero">
-      <div className="container">
+      <img className="page-hero-lifestyle" src="/assets/business/family-lifestyle-hero-light.jpg" alt="" aria-hidden="true" />
+      <div className="page-hero-shade" />
+      <div className="container page-hero-content">
         <p className="eyebrow text-gold-light">{eyebrow}</p>
         <h1 className="mt-4 font-display text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
           {title}
@@ -135,8 +137,8 @@ export function AboutPage() {
           <div className="space-y-4">
             <div className="relative overflow-hidden rounded-3xl bg-ink p-8 text-white shadow-xl shadow-ink/10">
           <img
-            src="/assets/business/hero-showroom.png"
-            alt="A premium appliance showroom with cooling and home-entertainment products"
+            src="/assets/business/family-lifestyle-hero-light.jpg"
+            alt="A comfortable home supported by modern appliances"
             className="absolute inset-0 size-full object-cover opacity-30"
           />
               <div className="relative z-10">
@@ -316,8 +318,8 @@ export function ContactPage() {
             </div>
             <div className="mt-10 aspect-[16/8] overflow-hidden rounded-2xl border border-white/10 bg-white/5">
               <img
-                src="/assets/business/hero-showroom.png"
-                alt="A premium appliance showroom with cooling and home-entertainment products"
+                src="/assets/business/family-lifestyle-hero-light.jpg"
+                alt="A comfortable modern Lagos home"
                 className="size-full object-cover opacity-90"
               />
             </div>

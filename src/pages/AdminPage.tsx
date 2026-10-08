@@ -748,7 +748,7 @@ export function AdminPage() {
                       </div>
                     </div>
                     <div className="p-4 pt-0 border-t border-slate-100 flex items-center justify-between gap-2 mt-2">
-                      <Link to={`/products?category=${cat.id}`} target="_blank" className="text-xs font-bold text-amber-600 inline-flex items-center gap-1">
+                      <Link to={`/category/${cat.id}`} target="_blank" className="text-xs font-bold text-amber-600 inline-flex items-center gap-1">
                         View Products <ExternalLink size={12} />
                       </Link>
                       <div className="flex items-center gap-1">

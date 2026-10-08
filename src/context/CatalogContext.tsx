@@ -27,7 +27,7 @@ export type SiteSettings = {
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
-  logo: '/assets/business/instagram-logo.jpg',
+  logo: '/assets/brand/akaycee-logo-transparent.png',
   siteName: 'A KAYCEE',
   tagline: 'ELECTRICALS',
 }
@@ -73,6 +73,26 @@ type CatalogContextType = {
 }
 
 const CatalogContext = createContext<CatalogContextType | null>(null)
+const PUBLIC_CATEGORY_MAP: Record<string, string> = {
+  'air-conditioners': 'cooling',
+  fans: 'cooling',
+  televisions: 'entertainment',
+  audio: 'entertainment',
+}
+const normalizeProducts = (items: Product[]) => items.map((item) => PUBLIC_CATEGORY_MAP[item.category] ? { ...item, category: PUBLIC_CATEGORY_MAP[item.category] } : item)
+const normalizeCategories = (items: Category[]) => {
+  const result: Category[] = []
+  const seen = new Set<string>()
+  items.forEach((item) => {
+    const id = PUBLIC_CATEGORY_MAP[item.id] || item.id
+    if (seen.has(id)) return
+    seen.add(id)
+    if (id === 'cooling') result.push({ id, name: 'Cooling', shortName: 'Cooling', description: 'Air conditioners, standing fans and rechargeable cooling solutions for comfortable spaces.', image: item.image || '/assets/products/hisense-1-5hp-ac.jpg' })
+    else if (id === 'entertainment') result.push({ id, name: 'Entertainment', shortName: 'Entertainment', description: 'Smart televisions, soundbars, speakers and immersive home-theatre options.', image: item.image || '/assets/products/samsung-65-qled-clean.jpg' })
+    else result.push(item)
+  })
+  return result
+}
 
 export function CatalogProvider({ children }: { children: React.ReactNode }) {
   // 1. Products State
@@ -82,13 +102,13 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed
+          return normalizeProducts(parsed)
         }
       }
     } catch (e) {
       console.error('Error loading stored products:', e)
     }
-    return defaultProducts
+    return normalizeProducts(defaultProducts)
   })
 
   // 2. Categories State
@@ -98,13 +118,13 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed
+          return normalizeCategories(parsed)
         }
       }
     } catch (e) {
       console.error('Error loading stored categories:', e)
     }
-    return defaultCategories
+    return normalizeCategories(defaultCategories)
   })
 
   // 3. Brands State
@@ -149,8 +169,8 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       try {
         const remote = await fetchRemoteCatalogue()
         if (!active || !remote) return
-        if (remote.products.length) setProducts(remote.products)
-        if (remote.categories.length) setCategories(remote.categories)
+        if (remote.products.length) setProducts(normalizeProducts(remote.products))
+        if (remote.categories.length) setCategories(normalizeCategories(remote.categories))
         if (remote.brands.length) setBrands(remote.brands)
         if (remote.settings) setSiteSettings((current) => ({ ...current, ...remote.settings }))
       } catch (error) {
