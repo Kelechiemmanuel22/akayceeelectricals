@@ -1,8 +1,6 @@
 export const contact = {
   phone: '08085565004',
   phoneHref: 'tel:+2348085565004',
-  additionalPhone: '07089630588',
-  additionalPhoneHref: 'tel:+2347089630588',
   whatsapp: '2347089630588',
   whatsappDisplay: '+234 708 963 0588',
   email: 'kelechiemmanuel999@gmail.com',
