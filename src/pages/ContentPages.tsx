@@ -341,6 +341,13 @@ export function ContactPage() {
               tone="gold"
             />
             <ContactCard
+              icon={Phone}
+              label="Additional phone line"
+              value={contact.additionalPhone}
+              href={contact.additionalPhoneHref}
+              tone="gold"
+            />
+            <ContactCard
               icon={InstagramIcon}
               label="Instagram profile"
               value="@a_kaycee_electricals"

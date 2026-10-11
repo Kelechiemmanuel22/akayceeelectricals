@@ -103,6 +103,7 @@ function Footer() {
           <p className="footer-label">Store & Contact</p>
           <a className="footer-address" href={contact.directions} target="_blank" rel="noreferrer">{contact.address}</a>
           <a className="footer-phone" href={contact.phoneHref}>{contact.phone}</a>
+          <a className="footer-phone" href={contact.additionalPhoneHref}>{contact.additionalPhone}</a>
           <a className="footer-email" href={`mailto:${contact.email}`}>{contact.email}</a>
           <WhatsAppLink compact className="mt-5 w-full text-center" />
         </div>
