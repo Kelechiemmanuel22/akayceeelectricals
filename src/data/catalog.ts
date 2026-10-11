@@ -130,6 +130,24 @@ export const brands = brandList.map((item) => item.name)
 
 export const products: Product[] = [
   {
+    slug: 'akt-two-gang-two-way-switch',
+    name: 'AKT B6 Grey Two-Gang Two-Way Switch',
+    category: 'electrical-materials',
+    brand: 'AKT',
+    description: 'Manufacturer-sourced demo example of a two-gang wall switch. Ask A Kaycee to confirm whether this model or a suitable alternative is available.',
+    specs: ['Two-gang format', 'Two-way switching', 'Grey finish', 'Model SQTQTD0000097 — confirm on enquiry'],
+    image: '/assets/products/akt-two-gang-switch.webp',
+  },
+  {
+    slug: 'akt-led-bulb-5w',
+    name: 'AKT 5W LED Bulb',
+    category: 'lighting',
+    brand: 'AKT',
+    description: 'Manufacturer-sourced demo example of an indoor LED bulb. Confirm the fitting, light colour and current availability with A Kaycee before ordering.',
+    specs: ['5W LED bulb', 'Indoor lighting', 'Confirm base type and light colour', 'Availability confirmed on enquiry'],
+    image: '/assets/products/akt-led-bulb-5w.webp',
+  },
+  {
     slug: 'hisense-1-5hp-inverter-split-ac',
     name: 'Hisense 1.5HP Inverter Split AC',
     category: 'cooling',

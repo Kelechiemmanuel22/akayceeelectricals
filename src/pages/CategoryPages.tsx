@@ -1,7 +1,9 @@
-import { ArrowLeft, ArrowRight, Check, Search, X } from 'lucide-react'
+import { ArrowRight, Check, Search, X, Wind, Fan, MessageCircle } from 'lucide-react'
+import { CategoryLanding, CategoryGuidance } from '../components/CategoryLanding'
+import { categoryPresentations } from '../data/categoryPresentation'
+import { categoryHeroes } from '../data/categoryHeroes'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { BrandLogo } from '../components/BrandLogos'
 import { ProductCard } from '../components/ProductCard'
 import { WhatsAppLink } from '../components/WhatsAppLink'
 import { useCatalog } from '../context/CatalogContext'
@@ -45,6 +47,8 @@ export function CategoryPage() {
   const category = categories.find((item) => item.id.toLowerCase() === resolvedCategoryId.toLowerCase())
   const [query, setQuery] = useState('')
   const [brand, setBrand] = useState('all')
+  const [coolingType, setCoolingType] = useState('all')
+  const isCooling = resolvedCategoryId.toLowerCase() === 'cooling'
 
   const categoryProducts = useMemo(() => products.filter((product) => product.category.toLowerCase() === resolvedCategoryId.toLowerCase()), [products, resolvedCategoryId])
   const categoryBrands = useMemo(() => brands.filter((item) => categoryProducts.some((product) => product.brand.toLowerCase() === item.name.toLowerCase())), [brands, categoryProducts])
@@ -53,9 +57,14 @@ export function CategoryPage() {
     return categoryProducts.filter((product) => {
       const matchesBrand = brand === 'all' || product.brand.toLowerCase() === brand.toLowerCase()
       const matchesSearch = !search || `${product.name} ${product.brand} ${product.description} ${product.specs.join(' ')}`.toLowerCase().includes(search)
-      return matchesBrand && matchesSearch
+      const isFan = /\bfan\b/i.test(`${product.name} ${product.specs.join(' ')}`)
+      const choice = categoryPresentations[resolvedCategoryId]?.choices.find((item) => item.id === coolingType)
+      const matchesType = coolingType === 'all' || (isCooling ? (coolingType === 'fans' ? isFan : !isFan) : !choice || choice.pattern.test(product.name))
+      return matchesBrand && matchesSearch && matchesType
     })
-  }, [brand, categoryProducts, query])
+  }, [brand, categoryProducts, query, coolingType, isCooling])
+
+  useEffect(() => { setQuery(''); setBrand('all'); setCoolingType('all') }, [resolvedCategoryId])
 
   useEffect(() => {
     if (category) setPageMeta(category.name, `${category.description} Browse available ${category.name.toLowerCase()} and enquire directly with A Kaycee Electricals.`)
@@ -65,39 +74,45 @@ export function CategoryPage() {
 
   const related = categories.filter((item) => item.id !== category.id).slice(0, 3)
 
-  return <>
-    <section className="category-detail-hero">
-      <img src={category.image} alt={category.name} />
-      <div className="category-detail-shade" />
-      <div className="container category-detail-copy">
-        <Link to="/#categories"><ArrowLeft size={15}/> Homepage categories</Link>
-        <p className="eyebrow text-gold-light">A Kaycee collection</p>
-        <h1>{category.name}</h1>
-        <p>{category.description}</p>
-        <span>{categoryProducts.length} {categoryProducts.length === 1 ? 'catalogue item' : 'catalogue items'}</span>
-      </div>
-    </section>
+  return <div className="cooling-page">
+    {isCooling ? <>
+      <section className="cooling-hero category-photo-hero category-photo-cooling">
+        <img className="category-photo-image" src={categoryHeroes.cooling.image} alt={categoryHeroes.cooling.alt} style={{ objectPosition: categoryHeroes.cooling.position }} fetchPriority="high" />
+        <div className="cooling-hero-shade" />
+        <div className="container cooling-hero-copy">
+          <p className="eyebrow">A Kaycee Cooling</p>
+          <h1>A cooler home.<br/><span>A happier you.</span></h1>
+          <p>Comfort for every room, every day.</p>
+          <div className="cooling-hero-actions"><a href="#cooling-collection" className="button button-dark">Explore cooling <ArrowRight size={17}/></a><WhatsAppLink subject="Cooling — air conditioners and fans" variant="ghost">Enquire now</WhatsAppLink></div>
+        </div>
+        <span className="cooling-hero-caption">AIR CONDITIONERS & FANS</span>
+      </section>
+      <section className="cooling-choices">
+        <div className="container">
+          <div className="cooling-section-title"><p className="eyebrow">Find your comfort</p><h2>How do you like to stay cool?</h2></div>
+          <div className="cooling-choice-grid">
+            {[{id:'air-conditioners', name:'Air conditioners', text:'Make every room your comfort zone.', image:'/assets/products/midea-2hp-ac-clean.png', label:'Explore air conditioners'}, {id:'fans', name:'Fans', text:'A little breeze. A big difference.', image:'/assets/products/royal-standing-fan.jpg', label:'Explore fans'}].map((item) => <a key={item.id} href="#cooling-collection" className={`cooling-choice ${coolingType === item.id ? 'selected' : ''}`} onClick={() => { setCoolingType(item.id); setBrand('all'); setQuery('') }}><div><h3>{item.name}</h3><p>{item.text}</p><span>{item.label} <ArrowRight size={18}/></span></div><img src={item.image} alt={item.name} loading="lazy"/></a>)}
+          </div>
+        </div>
+      </section>
+    </> : <CategoryLanding category={category} products={categoryProducts} selected={coolingType} onSelect={(id) => { setCoolingType(id); setBrand('all'); setQuery('') }}/ >}
 
-    {categoryBrands.length > 0 && <section className="category-brand-filter" aria-label={`Filter ${category.name} by brand`}>
-      <div className="container">
-        <button type="button" className={brand === 'all' ? 'active' : ''} onClick={() => setBrand('all')}>All brands</button>
-        {categoryBrands.map((item) => <button type="button" key={item.name} className={brand === item.name ? 'active' : ''} onClick={() => setBrand(item.name)} aria-label={`Show ${item.name} products`}>
-          <BrandLogo brand={item.name} logo={item.logo} logoDark={item.logoDark} variant="dark" className="category-brand-logo"/>
-        </button>)}
-      </div>
-    </section>}
-
-    <section className="category-products-section">
+    <section className="category-products-section" id="cooling-collection">
       <div className="container">
         <div className="category-products-heading">
-          <div><p className="eyebrow text-gold-dark">The collection</p><h2>Find your right fit.</h2></div>
+          <div><p className="eyebrow text-gold-dark">The collection</p><h2>{isCooling ? 'Your comfort starts here.' : 'Find your right fit.'}</h2></div>
           <label><Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${category.shortName.toLowerCase()}`} aria-label={`Search ${category.name}`}/>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={15}/></button>}</label>
         </div>
+        {isCooling && <div className="cooling-product-tabs" aria-label="Cooling product type">{[{id:'all',label:'All cooling'}, {id:'air-conditioners',label:'Air conditioners'}, {id:'fans',label:'Fans'}].map((item) => <button key={item.id} type="button" aria-pressed={coolingType === item.id} className={coolingType === item.id ? 'active' : ''} onClick={() => setCoolingType(item.id)}>{item.label}</button>)}<span>{displayed.length} {displayed.length === 1 ? 'item' : 'items'}</span></div>}
+        {!isCooling && <div className="cooling-product-tabs" aria-label={`${category.name} product type`}><button type="button" className={coolingType === 'all' ? 'active' : ''} aria-pressed={coolingType === 'all'} onClick={() => setCoolingType('all')}>All products</button>{categoryPresentations[category.id]?.choices.map((item) => <button key={item.id} type="button" aria-pressed={coolingType === item.id} className={coolingType === item.id ? 'active' : ''} onClick={() => setCoolingType(item.id)}>{item.name}</button>)}<span>{displayed.length} {displayed.length === 1 ? 'item' : 'items'}</span></div>}
+        <label className="collection-brand-select">Filter by brand<select value={brand} onChange={(event) => setBrand(event.target.value)}><option value="all">All brands</option>{categoryBrands.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
         <div className="catalogue-status"><Check size={15}/><span>Current pricing and availability are confirmed when you enquire.</span></div>
-        {displayed.length ? <div className="catalogue-grid">{displayed.map((product) => <ProductCard product={product} key={product.slug}/>)}</div> : <div className="catalogue-empty"><p className="eyebrow text-gold-dark">Nothing listed yet</p><h3>Ask us about {category.name.toLowerCase()}.</h3><p>The owner can add products to this category from the admin portal at any time.</p><WhatsAppLink subject={category.name}>Ask on WhatsApp</WhatsAppLink></div>}
+        {displayed.length ? <div className="catalogue-grid">{displayed.map((product) => <ProductCard product={product} key={product.slug}/>)}</div> : <div className="catalogue-empty"><p className="eyebrow text-gold-dark">No matching items</p><h3>Let’s find your right fit.</h3><p>Try another filter or ask the store about {category.name.toLowerCase()}.</p><button type="button" className="button button-dark" onClick={() => { setQuery(''); setBrand('all'); setCoolingType('all') }}>Reset filters</button><WhatsAppLink subject={category.name}>Ask on WhatsApp</WhatsAppLink></div>}
       </div>
     </section>
 
-    <section className="category-related"><div className="container"><div className="category-related-heading"><p className="eyebrow text-gold-dark">Keep exploring</p><h2>Other categories</h2></div><div className="category-related-grid">{related.map((item) => <Link to={`/category/${item.id}`} key={item.id}><img src={item.image} alt="" loading="lazy"/><span><strong>{item.name}</strong><ArrowRight size={17}/></span></Link>)}</div></div></section>
-  </>
+    {isCooling && <section className="cooling-guidance"><div className="container"><div className="cooling-guidance-title"><p className="eyebrow">Comfort, considered.</p><h2>Find what works<br/>for your space.</h2><WhatsAppLink subject="Help choosing an air conditioner or fan" variant="gold">Help me choose</WhatsAppLink></div><div className="cooling-guidance-grid">{[{icon:Wind,title:'The right room, the right AC',text:'Tell us your room size and we’ll help you explore suitable capacity options.'},{icon:Fan,title:'Breeze your way',text:'Explore standing and rechargeable fan options for home or office.'},{icon:MessageCircle,title:'A real conversation',text:'Ask the store about model details, installation and current pricing.'}].map((item) => <article key={item.title}><item.icon size={28} strokeWidth={1.5}/><h3>{item.title}</h3><p>{item.text}</p></article>)}</div></div></section>}
+    {!isCooling && <CategoryGuidance category={category}/>}
+    <section className="category-related"><div className="container"><div className="category-related-heading"><p className="eyebrow text-gold-dark">Keep exploring</p><h2>More for your home.</h2></div><div className="category-related-grid">{related.map((item) => <Link to={`/category/${item.id}`} key={item.id}><img src={item.image} alt="" loading="lazy"/><span><strong>{item.name}</strong><ArrowRight size={17}/></span></Link>)}</div></div></section>
+  </div>
 }
