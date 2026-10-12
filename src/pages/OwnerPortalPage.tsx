@@ -4,8 +4,11 @@ import { BarChart3, Check, FolderPlus, ImagePlus, Loader2, LogOut, PackagePlus, 
 import { CATALOG_BUCKET, isSupabaseConfigured, supabase } from '../lib/supabase'
 import { AdminGrowthPanel } from '../components/AdminGrowthPanel'
 import { researchedProducts } from '../data/researchedProducts'
+import { AdminTeamPanel, AdminPasswordSetup } from '../components/AdminTeamPanel'
+import { parsePrice } from '../lib/pricing'
 
 type ProductRow = {
+  price?: number | null
   id: string
   slug: string
   name: string
@@ -75,6 +78,8 @@ export function OwnerPortalPage() {
   const [session, setSession] = useState<Session | null>(null)
   const [checking, setChecking] = useState(true)
   const [isOwner, setIsOwner] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [setupPassword, setSetupPassword] = useState(() => new URLSearchParams(window.location.search).get('setup') === '1')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
@@ -101,6 +106,7 @@ export function OwnerPortalPage() {
   useEffect(() => {
     if (!supabase || !session) {
       setIsOwner(false)
+      setIsAdmin(false)
       return
     }
 
@@ -112,6 +118,7 @@ export function OwnerPortalPage() {
       .maybeSingle()
       .then(({ data, error }) => {
         setIsOwner(!error && data?.role === 'owner')
+        setIsAdmin(!error && ['owner', 'admin'].includes(data?.role || ''))
         setChecking(false)
       })
   }, [session])
@@ -148,23 +155,25 @@ export function OwnerPortalPage() {
     )
   }
 
-  if (!isOwner) {
-    return <PortalMessage title="This account is not an owner" text="The account is signed in, but it has not been approved as an A Kaycee owner account." action={<button className="button button-dark" onClick={() => void supabase?.auth.signOut()}>Sign out</button>} />
+  if (setupPassword) return <AdminPasswordSetup onComplete={() => { setSetupPassword(false); window.history.replaceState(null, '', '/ak-owner-portal') }} />
+
+  if (!isAdmin) {
+    return <PortalMessage title="Administrator access required" text="This account is signed in, but the owner has not granted it access to manage the website." action={<button className="button button-dark" onClick={() => void supabase?.auth.signOut()}>Sign out</button>} />
   }
 
-  return <OwnerDashboard session={session} />
+  return <OwnerDashboard session={session} isOwner={isOwner} />
 }
 
 function PortalMessage({ title, text, loading, action }: { title: string; text: string; loading?: boolean; action?: React.ReactNode }) {
   return <main className="owner-login-shell"><div className="owner-login-card owner-message-card">{loading ? <Loader2 className="animate-spin text-gold-dark" size={30} /> : <ShieldCheck className="text-gold-dark" size={30} />}<h1>{title}</h1><p>{text}</p>{action}<a href="/" className="owner-back-link">Return to public website</a></div></main>
 }
 
-function OwnerDashboard({ session }: { session: Session }) {
+function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boolean }) {
   const [products, setProducts] = useState<ProductRow[]>([])
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [brands, setBrands] = useState<BrandRow[]>([])
   const [settings, setSettings] = useState<SettingsRow | null>(null)
-  const [section, setSection] = useState<'growth' | 'products' | 'categories' | 'brands' | 'settings'>('growth')
+  const [section, setSection] = useState<'growth' | 'products' | 'categories' | 'brands' | 'settings' | 'team'>(isOwner ? 'growth' : 'products')
   const [editing, setEditing] = useState<ProductRow | null>(null)
   const [creating, setCreating] = useState(false)
   const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null)
@@ -175,15 +184,17 @@ function OwnerDashboard({ session }: { session: Session }) {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(true)
   const [importingModels, setImportingModels] = useState(false)
+  const [pricesEnabled, setPricesEnabled] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase) return
     setBusy(true)
-    const [productResult, categoryResult, brandResult, settingsResult] = await Promise.all([
+    const [productResult, categoryResult, brandResult, settingsResult, priceResult] = await Promise.all([
       supabase.from('products').select('*').order('sort_order'),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('brands').select('*').order('sort_order'),
       supabase.from('site_settings').select('*').eq('id', 1).maybeSingle(),
+      supabase.from('products').select('price').limit(1),
     ])
     if (productResult.error) setNotice(productResult.error.message)
     else setProducts((productResult.data || []) as ProductRow[])
@@ -192,6 +203,7 @@ function OwnerDashboard({ session }: { session: Session }) {
     if (brandResult.error) setNotice(brandResult.error.message)
     else setBrands((brandResult.data || []) as BrandRow[])
     setSettings(settingsResult.data as SettingsRow | null)
+    setPricesEnabled(!priceResult.error)
     setBusy(false)
   }, [])
 
@@ -296,14 +308,16 @@ function OwnerDashboard({ session }: { session: Session }) {
       <section className="owner-dashboard-content">
         {notice && <div className="owner-notice"><Check size={17} />{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message"><X size={15} /></button></div>}
         <nav className="owner-admin-tabs" aria-label="Admin sections">
-          <button className={section === 'growth' ? 'active' : ''} onClick={() => setSection('growth')}><BarChart3 size={17} /> Growth & analytics</button>
+          {isOwner && <button className={section === 'growth' ? 'active' : ''} onClick={() => setSection('growth')}><BarChart3 size={17} /> Growth & analytics</button>}
           <button className={section === 'products' ? 'active' : ''} onClick={() => setSection('products')}><PackagePlus size={17} /> Products <span>{products.length}</span></button>
           <button className={section === 'categories' ? 'active' : ''} onClick={() => setSection('categories')}><FolderPlus size={17} /> Categories <span>{categories.length}</span></button>
           <button className={section === 'brands' ? 'active' : ''} onClick={() => setSection('brands')}><Tags size={17} /> Brands <span>{brands.length}</span></button>
           <button className={section === 'settings' ? 'active' : ''} onClick={() => setSection('settings')}><ShieldCheck size={17} /> Business details</button>
+          {isOwner && <button className={section === 'team' ? 'active' : ''} onClick={() => setSection('team')}><ShieldCheck size={17}/> Team & access</button>}
         </nav>
 
-        {section === 'growth' && <AdminGrowthPanel />}
+        {section === 'growth' && isOwner && <AdminGrowthPanel />}
+        {section === 'team' && isOwner && <AdminTeamPanel />}
 
         {section === 'products' && <>
           <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Products</p><h2>Published catalogue</h2><p>Add stock examples and assign each one to a category and brand.</p></div><button className="button button-dark" onClick={() => setCreating(true)}><PackagePlus size={17} /> Add product</button></div>
@@ -335,16 +349,17 @@ function OwnerDashboard({ session }: { session: Session }) {
         {section === 'settings' && settings && <form className="owner-settings-card owner-settings-standalone" onSubmit={saveSettings}><div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Business details</p><h2>Public contact information</h2></div><button className="button button-dark">Save details</button></div><div className="owner-form-grid"><label>Phone<input value={settings.phone} onChange={(event) => setSettings({ ...settings, phone: event.target.value })} /></label><label>WhatsApp number<input value={settings.whatsapp} onChange={(event) => setSettings({ ...settings, whatsapp: event.target.value })} /></label><label>Email<input type="email" value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} /></label><label>Instagram URL<input value={settings.instagram_url} onChange={(event) => setSettings({ ...settings, instagram_url: event.target.value })} /></label><label className="owner-wide">Address<input value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} /></label></div></form>}
       </section>
 
-      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
+      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
       {(creatingCategory || editingCategory) && <CategoryEditor category={editingCategory || emptyCategory} isNew={creatingCategory} onClose={() => { setCreatingCategory(false); setEditingCategory(null) }} onSaved={async (message) => { setNotice(message); setCreatingCategory(false); setEditingCategory(null); await load() }} />}
       {(creatingBrand || editingBrand) && <BrandEditor brand={editingBrand || emptyBrand} isNew={creatingBrand} onClose={() => { setCreatingBrand(false); setEditingBrand(null) }} onSaved={async (message) => { setNotice(message); setCreatingBrand(false); setEditingBrand(null); await load() }} />}
     </main>
   )
 }
 
-function ProductEditor({ product, categories, brands, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
+function ProductEditor({ product, categories, brands, pricesEnabled, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; pricesEnabled: boolean; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
   const [form, setForm] = useState(product)
   const [specText, setSpecText] = useState(product.specs.join('\n'))
+  const [priceText, setPriceText] = useState(product.price == null ? '' : String(product.price))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -360,10 +375,12 @@ function ProductEditor({ product, categories, brands, onClose, onSaved }: { prod
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!supabase) return
+    let price: number | null
+    try { price = parsePrice(priceText) } catch (error) { setError(error instanceof Error ? error.message : 'Invalid price.'); return }
     setSaving(true)
     setError('')
     const { id: _ignoredId, ...editable } = 'id' in form ? form : { ...form, id: '' }
-    const payload = { ...editable, slug: form.slug || slugify(form.name), specs: specText.split('\n').map((item) => item.trim()).filter(Boolean) }
+    const payload = { ...editable, ...(pricesEnabled ? { price } : {}), slug: form.slug || slugify(form.name), specs: specText.split('\n').map((item) => item.trim()).filter(Boolean) }
     const result = 'id' in product
       ? await supabase.from('products').update(payload).eq('id', product.id)
       : await supabase.from('products').insert(payload)
@@ -372,7 +389,7 @@ function ProductEditor({ product, categories, brands, onClose, onSaved }: { prod
     else await onSaved(`Saved ${payload.name}. The public catalogue will update automatically.`)
   }
 
-  return <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Product editor"><form className="owner-editor" onSubmit={save}><div className="owner-editor-header"><div><p className="eyebrow text-gold-dark">Catalogue editor</p><h2>{'id' in product ? 'Edit product' : 'Add product'}</h2></div><button type="button" onClick={onClose} aria-label="Close editor"><X /></button></div><div className="owner-form-grid"><label>Product name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value, slug: form.slug || slugify(event.target.value) })} required /></label><label>URL slug<input value={form.slug} onChange={(event) => setForm({ ...form, slug: slugify(event.target.value) })} required /></label><label>Category<select value={form.category_id} onChange={(event) => setForm({ ...form, category_id: event.target.value })}>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<select value={form.brand_name} onChange={(event) => setForm({ ...form, brand_name: event.target.value })}>{brands.map((item) => <option key={item.name}>{item.name}</option>)}<option>Generic</option></select></label><label className="owner-wide">Description<textarea rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required /></label><label className="owner-wide">Specifications — one per line<textarea rows={5} value={specText} onChange={(event) => setSpecText(event.target.value)} /></label><label className="owner-wide">Image URL<input value={form.image_url} onChange={(event) => setForm({ ...form, image_url: event.target.value })} required /></label><label className="owner-upload"><ImagePlus size={20} /> Upload product image<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void uploadImage(event)} /></label><label className="owner-check"><input type="checkbox" checked={form.featured} onChange={(event) => setForm({ ...form, featured: event.target.checked })} /> Featured product</label><label className="owner-check"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /> Visible publicly</label></div>{form.image_url && <img className="owner-image-preview" src={form.image_url} alt="Product preview" />}{error && <div className="owner-error">{error}</div>}<div className="owner-editor-actions"><button type="button" className="button button-light" onClick={onClose}>Cancel</button><button className="button button-dark" disabled={saving}>{saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />} Save product</button></div></form></div>
+  return <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Product editor"><form className="owner-editor" onSubmit={save}><div className="owner-editor-header"><div><p className="eyebrow text-gold-dark">Catalogue editor</p><h2>{'id' in product ? 'Edit product' : 'Add product'}</h2></div><button type="button" onClick={onClose} aria-label="Close editor"><X /></button></div><div className="owner-form-grid"><label>Product name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value, slug: form.slug || slugify(event.target.value) })} required /></label><label>URL slug<input value={form.slug} onChange={(event) => setForm({ ...form, slug: slugify(event.target.value) })} required /></label><label>Category<select value={form.category_id} onChange={(event) => setForm({ ...form, category_id: event.target.value })}>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<select value={form.brand_name} onChange={(event) => setForm({ ...form, brand_name: event.target.value })}>{brands.map((item) => <option key={item.name}>{item.name}</option>)}<option>Generic</option></select></label><label>Price (NGN) — optional<input type="number" min="0" max="9999999999.99" step="0.01" disabled={!pricesEnabled} value={priceText} onChange={(event) => setPriceText(event.target.value)} placeholder="Leave blank for enquiry" /><small>{pricesEnabled ? 'Shown only on category listings and product details. Leave blank to hide the amount.' : 'Apply Supabase migration 004_product_prices.sql to enable pricing. Other product edits still work.'}</small></label><label className="owner-wide">Description<textarea rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required /></label><label className="owner-wide">Specifications — one per line<textarea rows={5} value={specText} onChange={(event) => setSpecText(event.target.value)} /></label><label className="owner-wide">Image URL<input value={form.image_url} onChange={(event) => setForm({ ...form, image_url: event.target.value })} required /></label><label className="owner-upload"><ImagePlus size={20} /> Upload product image<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void uploadImage(event)} /></label><label className="owner-check"><input type="checkbox" checked={form.featured} onChange={(event) => setForm({ ...form, featured: event.target.checked })} /> Featured product</label><label className="owner-check"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /> Visible publicly</label></div>{form.image_url && <img className="owner-image-preview" src={form.image_url} alt="Product preview" />}{error && <div className="owner-error">{error}</div>}<div className="owner-editor-actions"><button type="button" className="button button-light" onClick={onClose}>Cancel</button><button className="button button-dark" disabled={saving}>{saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />} Save product</button></div></form></div>
 }
 
 async function uploadCatalogueImage(file: File, folder: string) {

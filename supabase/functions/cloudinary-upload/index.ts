@@ -36,7 +36,7 @@ Deno.serve(async (request) => {
     if (userError || !userResult.user) return json({ error: 'Your admin session has expired.' }, 401)
 
     const { data: profile } = await client.from('profiles').select('role').eq('id', userResult.user.id).maybeSingle()
-    if (profile?.role !== 'owner') return json({ error: 'Only the approved store owner can upload images.' }, 403)
+    if (!['owner', 'admin'].includes(profile?.role || '')) return json({ error: 'Only approved administrators can upload images.' }, 403)
 
     const form = await request.formData()
     const file = form.get('file')

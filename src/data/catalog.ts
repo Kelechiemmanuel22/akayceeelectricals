@@ -20,6 +20,7 @@ export type Product = {
   image: string
   featured?: boolean
   sourceUrl?: string
+  price?: number | null
 }
 
 export const categories: Category[] = [

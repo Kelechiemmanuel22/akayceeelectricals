@@ -171,9 +171,11 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       try {
         const remote = await fetchRemoteCatalogue()
         if (!active || !remote) return
-        if (remote.products.length) setProducts(normalizeProducts(remote.products))
-        if (remote.categories.length) setCategories(normalizeCategories(remote.categories))
-        if (remote.brands.length) setBrands(remote.brands)
+        // An empty remote catalogue is authoritative too: never resurrect
+        // deleted/hidden products from a browser cache or shipped examples.
+        setProducts(normalizeProducts(remote.products))
+        setCategories(normalizeCategories(remote.categories))
+        setBrands(remote.brands)
         if (remote.settings) setSiteSettings((current) => ({ ...current, ...remote.settings }))
       } catch (error) {
         console.error('Unable to load the Supabase catalogue. Using the local catalogue fallback.', error)
@@ -200,6 +202,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
 
   // Broadcast channel for instantaneous cross-tab synchronization
   const broadcastSync = useCallback((type: string) => {
+    if (isSupabaseConfigured) return
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         const bc = new BroadcastChannel(SYNC_CHANNEL_NAME)
@@ -213,6 +216,8 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
 
   // Listen for storage changes from other tabs or windows
   useEffect(() => {
+    // Supabase, not another tab's stale browser-only draft, owns live content.
+    if (isSupabaseConfigured) return
     const reloadFromStorage = () => {
       try {
         const storedProducts = localStorage.getItem(STORAGE_KEY_PRODUCTS)

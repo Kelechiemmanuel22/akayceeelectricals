@@ -5,8 +5,9 @@ import { WhatsAppLink } from './WhatsAppLink'
 import { useQuoteCart } from '../context/QuoteCartContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useShopTools } from '../context/ShopToolsContext'
+import { formatPrice } from '../lib/pricing'
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, showPrice = false }: { product: Product; showPrice?: boolean }) {
   const { getCategoryById } = useCatalog()
   const category = getCategoryById(product.category)
   const { addItem, items } = useQuoteCart()
@@ -32,6 +33,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="product-card-content">
         <p className="product-card-meta">{product.brand}<span />{category.name}</p>
         <h3><Link to={`/products/${product.slug}`}>{product.name}</Link></h3>
+        {showPrice && formatPrice(product.price) && <p className="product-price">{formatPrice(product.price)}</p>}
         <p className="product-card-description">{product.description}</p>
         <div className="product-card-specs">
           {product.specs.slice(0, 2).map((spec) => <span key={spec}>{spec}</span>)}

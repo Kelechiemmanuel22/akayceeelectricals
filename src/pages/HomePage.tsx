@@ -7,6 +7,7 @@ import { ProductCard } from '../components/ProductCard'
 import { WhatsAppLink } from '../components/WhatsAppLink'
 import { NewsletterSignup } from '../components/NewsletterSignup'
 import { useCatalog } from '../context/CatalogContext'
+import { HomeCategoryCarousel } from '../components/HomeCategoryCarousel'
 
 export function HomePage() {
   const { products, categories, brands } = useCatalog()
@@ -34,25 +35,7 @@ export function HomePage() {
         <div className="showroom-scroll-cue"><span />Discover</div>
       </section>
 
-      <section className="showroom-categories" id="categories">
-        <div className="container showroom-section-heading">
-          <div><p className="showroom-kicker showroom-kicker-blue">Explore the range</p><h2>Shop by category</h2></div>
-          <Link to="/#categories">Browse below <ArrowRight size={16} /></Link>
-        </div>
-        <div className="container showroom-category-grid">
-          {categories.map((category, index) => {
-            const count = products.filter((product) => product.category === category.id).length
-            return (
-              <Link key={category.id} to={`/category/${category.id}`} className={`showroom-category-card showroom-category-${index + 1}`}>
-                <img src={category.image} alt={`${category.name} at A Kaycee Electricals`} loading={index > 2 ? 'lazy' : 'eager'} />
-                <div className="showroom-category-overlay" />
-                <span className="showroom-category-count">{count || 'New'} {count === 1 ? 'product' : count ? 'products' : ''}</span>
-                <div><h3>{category.name}</h3><span>Explore <ArrowRight size={17} /></span></div>
-              </Link>
-            )
-          })}
-        </div>
-      </section>
+      <HomeCategoryCarousel categories={categories} products={products}/>
 
       <section className="showroom-products">
         <div className="container showroom-section-heading">

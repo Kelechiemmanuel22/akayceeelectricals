@@ -21,6 +21,7 @@ type BrandRow = {
 }
 
 type ProductRow = {
+  price?: number | null
   slug: string
   name: string
   category_id: string
@@ -53,7 +54,8 @@ export async function fetchRemoteCatalogue(): Promise<RemoteCatalogue | null> {
   const [categoryResult, brandResult, productResult, settingsResult] = await Promise.all([
     supabase.from('categories').select('id,name,short_name,description,image_url,sort_order').eq('active', true).order('sort_order'),
     supabase.from('brands').select('name,logo_url,logo_dark_url,tagline,category_tags,sort_order').eq('active', true).order('sort_order'),
-    supabase.from('products').select('slug,name,category_id,brand_name,description,specs,image_url,featured,sort_order').eq('active', true).order('sort_order'),
+    // Remains compatible before the optional price-column migration is applied.
+    supabase.from('products').select('*').eq('active', true).order('sort_order'),
     supabase.from('site_settings').select('logo_url,site_name,tagline,phone,whatsapp').eq('id', 1).maybeSingle(),
   ])
 
@@ -85,6 +87,7 @@ export async function fetchRemoteCatalogue(): Promise<RemoteCatalogue | null> {
     specs: row.specs || [],
     image: row.image_url,
     featured: row.featured,
+    price: row.price ?? null,
   }))
 
   const settingsRow = settingsResult.data as SettingsRow | null
