@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { BarChart3, Check, FolderPlus, ImagePlus, Loader2, LogOut, PackagePlus, Pencil, ShieldCheck, Tags, Trash2, X } from 'lucide-react'
 import { CATALOG_BUCKET, isSupabaseConfigured, supabase } from '../lib/supabase'
 import { AdminGrowthPanel } from '../components/AdminGrowthPanel'
+import { researchedProducts } from '../data/researchedProducts'
 
 type ProductRow = {
   id: string
@@ -173,6 +174,7 @@ function OwnerDashboard({ session }: { session: Session }) {
   const [query, setQuery] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(true)
+  const [importingModels, setImportingModels] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -194,6 +196,29 @@ function OwnerDashboard({ session }: { session: Session }) {
   }, [])
 
   useEffect(() => { void load() }, [load])
+
+  const importModelExamples = async () => {
+    if (!supabase || importingModels || busy) return
+    setImportingModels(true)
+    try {
+      const missing = researchedProducts.filter(model => !products.some(product => product.slug === model.slug))
+      if (!missing.length) { setNotice('All researched model examples are already in the catalogue. Existing edits were kept.'); return }
+      const rows = missing.map((model, index) => {
+        const category = categories.find(item => item.id === model.category) || categories.find(item => model.category === 'cooling' && item.id === 'air-conditioners')
+        if (!category) throw new Error(`Create the ${model.category} category before importing model examples.`)
+        return {
+          slug: model.slug, name: model.name, category_id: category.id, brand_name: model.brand,
+          description: model.description, specs: [...model.specs, `Manufacturer reference: ${model.sourceUrl}`],
+          image_url: model.image, featured: false, active: true, sort_order: 200 + index,
+        }
+      })
+      const { error } = await supabase.from('products').upsert(rows, { onConflict: 'slug', ignoreDuplicates: true })
+      if (error) throw error
+      setNotice(`${rows.length} manufacturer model examples imported into Supabase. Existing products were not overwritten. Confirm store stock and image permissions before launch.`)
+      await load()
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Could not import model examples. Try again. Keep the existing catalogue unchanged.') }
+    finally { setImportingModels(false) }
+  }
 
   const visibleProducts = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -283,6 +308,7 @@ function OwnerDashboard({ session }: { session: Session }) {
         {section === 'products' && <>
           <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Products</p><h2>Published catalogue</h2><p>Add stock examples and assign each one to a category and brand.</p></div><button className="button button-dark" onClick={() => setCreating(true)}><PackagePlus size={17} /> Add product</button></div>
           <input className="owner-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products or brands" aria-label="Search admin products" />
+          <div className="owner-model-import"><div><strong>Researched appliance models</strong><p>Add 14 manufacturer-sourced examples for laundry, refrigerators and air conditioners. Existing entries are skipped. These are examples, not verified stock.</p></div><button type="button" className="button button-dark" disabled={busy || importingModels} onClick={() => void importModelExamples()}>{importingModels ? <Loader2 className="animate-spin" size={17}/> : <PackagePlus size={17}/>} {importingModels ? 'Importing…' : 'Import model examples'}</button></div>
           <div className="owner-product-table">
             {busy ? <div className="owner-loading"><Loader2 className="animate-spin" /> Loading catalogue…</div> : visibleProducts.map((product) => (
               <article key={product.id} className="owner-product-row">

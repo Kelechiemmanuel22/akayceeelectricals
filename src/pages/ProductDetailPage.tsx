@@ -11,9 +11,10 @@ import { trackEvent } from '../lib/engagement'
 
 export function ProductDetailPage() {
   const { slug } = useParams()
-  const { products, getCategoryById } = useCatalog()
+  const { products, getCategoryById, isLoading } = useCatalog()
   const { addItem, items } = useQuoteCart()
   const product = products.find((entry) => entry.slug === slug)
+  const sourceUrl = product?.sourceUrl || product?.specs.find(spec => spec.startsWith('Manufacturer reference: https://'))?.replace('Manufacturer reference: ', '')
 
   useEffect(() => {
     if (product) {
@@ -25,6 +26,7 @@ export function ProductDetailPage() {
     }
   }, [product])
 
+  if (!product && isLoading) return <section className="section"><div className="container" role="status">Loading product details…</div></section>
   if (!product) return <Navigate to="/not-found" replace />
 
   const category = getCategoryById(product.category)
@@ -55,7 +57,7 @@ export function ProductDetailPage() {
                 <img
                   src={product.image}
                   alt={`${product.name} - A Kaycee Electricals Ogba Lagos`}
-                  className="size-full object-cover"
+                  className="size-full object-contain"
                   onError={(e) => {
                     ;(e.target as HTMLImageElement).src = '/assets/products/copper-cable-coil.jpg'
                   }}
@@ -106,7 +108,7 @@ export function ProductDetailPage() {
                 <div className="mt-8 rounded-2xl border border-ink/10 bg-white p-6 shadow-xs">
                   <h2 className="eyebrow text-ink/50">Technical Specifications</h2>
                   <ul className="mt-4 space-y-3">
-                    {product.specs.map((spec) => (
+                    {product.specs.filter(spec => !spec.startsWith('Manufacturer reference:')).map((spec) => (
                       <li key={spec} className="flex items-center gap-3 text-sm font-semibold text-ink">
                         <span className="grid size-5 place-items-center rounded-full bg-gold/15 text-gold-dark">
                           <Check size={13} />
@@ -115,6 +117,7 @@ export function ProductDetailPage() {
                       </li>
                     ))}
                   </ul>
+                  {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer" className="manufacturer-reference">View manufacturer specifications <ArrowUpRight size={15}/></a>}
                 </div>
 
                 {/* Trust & Guarantee Badges */}

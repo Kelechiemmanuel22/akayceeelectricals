@@ -19,8 +19,11 @@ export const categoryPresentations: Record<string, Presentation> = {
   laundry: {
     title: 'Less laundry time.', accent: 'More living time.', subtitle: 'Find the right washing machine for your daily routine.',
     choices: [
-      { id: 'front-load', name: 'Front-load washers', text: 'A fresh start for every load.', pattern: /front[ -]?load/i },
-      { id: 'top-load', name: 'Top-load & twin-tub', text: 'Simple choices for everyday washing.', pattern: /top[ -]?load|twin[ -]?tub/i },
+      { id: 'front-load', name: 'Automatic front-load', text: 'A fresh start for every load.', pattern: /front[ -]?load/i },
+      { id: 'top-load', name: 'Automatic top-load', text: 'Load from above. Let the machine do the washing.', pattern: /top[ -]?load/i },
+      { id: 'semi-automatic', name: 'Semi-automatic', text: 'Separate wash and spin tubs. More hands-on control.', pattern: /semi[ -]?automatic|twin[ -]?tub/i },
+      { id: 'dryers', name: 'Dryers', text: 'A separate appliance for drying washed clothes.', pattern: /heat[ -]?pump.*dryer|standalone dryer/i },
+      { id: 'washer-dryers', name: 'Washer-dryers', text: 'Wash and dry in one appliance.', pattern: /washer[ -]?dryer/i },
     ],
   },
   kitchen: {

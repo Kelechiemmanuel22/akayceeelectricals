@@ -33,6 +33,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 }
 
 type CatalogContextType = {
+  isLoading: boolean
   // Products
   products: Product[]
   addProduct: (product: Omit<Product, 'slug'> & { slug?: string }) => { success: boolean; message?: string }
@@ -95,6 +96,7 @@ const normalizeCategories = (items: Category[]) => {
 }
 
 export function CatalogProvider({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
   // 1. Products State
   const [products, setProducts] = useState<Product[]>(() => {
     try {
@@ -175,6 +177,8 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
         if (remote.settings) setSiteSettings((current) => ({ ...current, ...remote.settings }))
       } catch (error) {
         console.error('Unable to load the Supabase catalogue. Using the local catalogue fallback.', error)
+      } finally {
+        if (active) setIsLoading(false)
       }
     }
 
@@ -632,6 +636,7 @@ export const products: Product[] = ${JSON.stringify(products, null, 2)};
   return (
     <CatalogContext.Provider
       value={{
+        isLoading,
         // Products
         products,
         addProduct,

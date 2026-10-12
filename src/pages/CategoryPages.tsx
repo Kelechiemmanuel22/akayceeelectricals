@@ -2,6 +2,7 @@ import { ArrowRight, Check, Search, X, Wind, Fan, MessageCircle } from 'lucide-r
 import { CategoryLanding, CategoryGuidance } from '../components/CategoryLanding'
 import { categoryPresentations } from '../data/categoryPresentation'
 import { categoryHeroes } from '../data/categoryHeroes'
+import { categoryProductTypes, matchesProductType } from '../data/productTypes'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard'
@@ -51,18 +52,18 @@ export function CategoryPage() {
   const isCooling = resolvedCategoryId.toLowerCase() === 'cooling'
 
   const categoryProducts = useMemo(() => products.filter((product) => product.category.toLowerCase() === resolvedCategoryId.toLowerCase()), [products, resolvedCategoryId])
-  const categoryBrands = useMemo(() => brands.filter((item) => categoryProducts.some((product) => product.brand.toLowerCase() === item.name.toLowerCase())), [brands, categoryProducts])
+  const categoryBrands = useMemo(() => Array.from(new Set(categoryProducts.map(product => product.brand))).sort().map(name => brands.find(item => item.name === name) || { name }), [brands, categoryProducts])
+  const typeFilters = categoryProductTypes[resolvedCategoryId]
   const displayed = useMemo(() => {
     const search = query.trim().toLowerCase()
     return categoryProducts.filter((product) => {
       const matchesBrand = brand === 'all' || product.brand.toLowerCase() === brand.toLowerCase()
       const matchesSearch = !search || `${product.name} ${product.brand} ${product.description} ${product.specs.join(' ')}`.toLowerCase().includes(search)
-      const isFan = /\bfan\b/i.test(`${product.name} ${product.specs.join(' ')}`)
       const choice = categoryPresentations[resolvedCategoryId]?.choices.find((item) => item.id === coolingType)
-      const matchesType = coolingType === 'all' || (isCooling ? (coolingType === 'fans' ? isFan : !isFan) : !choice || choice.pattern.test(product.name))
+      const matchesType = coolingType === 'all' || (typeFilters ? matchesProductType(product, resolvedCategoryId, coolingType) : !choice || choice.pattern.test(product.name))
       return matchesBrand && matchesSearch && matchesType
     })
-  }, [brand, categoryProducts, query, coolingType, isCooling])
+  }, [brand, categoryProducts, query, coolingType, resolvedCategoryId, typeFilters])
 
   useEffect(() => { setQuery(''); setBrand('all'); setCoolingType('all') }, [resolvedCategoryId])
 
@@ -103,11 +104,11 @@ export function CategoryPage() {
           <div><p className="eyebrow text-gold-dark">The collection</p><h2>{isCooling ? 'Your comfort starts here.' : 'Find your right fit.'}</h2></div>
           <label><Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${category.shortName.toLowerCase()}`} aria-label={`Search ${category.name}`}/>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={15}/></button>}</label>
         </div>
-        {isCooling && <div className="cooling-product-tabs" aria-label="Cooling product type">{[{id:'all',label:'All cooling'}, {id:'air-conditioners',label:'Air conditioners'}, {id:'fans',label:'Fans'}].map((item) => <button key={item.id} type="button" aria-pressed={coolingType === item.id} className={coolingType === item.id ? 'active' : ''} onClick={() => setCoolingType(item.id)}>{item.label}</button>)}<span>{displayed.length} {displayed.length === 1 ? 'item' : 'items'}</span></div>}
-        {!isCooling && <div className="cooling-product-tabs" aria-label={`${category.name} product type`}><button type="button" className={coolingType === 'all' ? 'active' : ''} aria-pressed={coolingType === 'all'} onClick={() => setCoolingType('all')}>All products</button>{categoryPresentations[category.id]?.choices.map((item) => <button key={item.id} type="button" aria-pressed={coolingType === item.id} className={coolingType === item.id ? 'active' : ''} onClick={() => setCoolingType(item.id)}>{item.name}</button>)}<span>{displayed.length} {displayed.length === 1 ? 'item' : 'items'}</span></div>}
+        <div className="cooling-product-tabs collection-type-tabs" aria-label={`${category.name} product type`}><button type="button" className={coolingType === 'all' ? 'active' : ''} aria-pressed={coolingType === 'all'} onClick={() => setCoolingType('all')}>All products</button>{(typeFilters || categoryPresentations[category.id]?.choices.map(item => ({ id:item.id, label:item.name })) || []).map(item => <button key={item.id} type="button" aria-pressed={coolingType === item.id} className={coolingType === item.id ? 'active' : ''} onClick={() => setCoolingType(item.id)}>{item.label}</button>)}<span>{displayed.length} {displayed.length === 1 ? 'item' : 'items'}</span></div>
+        {category.id === 'laundry' && <div className="laundry-type-note"><strong>Washer, dryer or both?</strong><p>Automatic washers wash and spin. Semi-automatic twin-tubs need clothes moved from the wash tub to the spin tub. A standalone dryer dries only; a washer-dryer washes and dries in one drum, usually with a smaller drying capacity.</p></div>}
         <label className="collection-brand-select">Filter by brand<select value={brand} onChange={(event) => setBrand(event.target.value)}><option value="all">All brands</option>{categoryBrands.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
         <div className="catalogue-status"><Check size={15}/><span>Current pricing and availability are confirmed when you enquire.</span></div>
-        {displayed.length ? <div className="catalogue-grid">{displayed.map((product) => <ProductCard product={product} key={product.slug}/>)}</div> : <div className="catalogue-empty"><p className="eyebrow text-gold-dark">No matching items</p><h3>Let’s find your right fit.</h3><p>Try another filter or ask the store about {category.name.toLowerCase()}.</p><button type="button" className="button button-dark" onClick={() => { setQuery(''); setBrand('all'); setCoolingType('all') }}>Reset filters</button><WhatsAppLink subject={category.name}>Ask on WhatsApp</WhatsAppLink></div>}
+        {displayed.length ? <div className="catalogue-grid">{displayed.map((product) => <ProductCard product={product} key={product.slug}/>)}</div> : <div className="catalogue-empty"><p className="eyebrow text-gold-dark">No matching items</p><h3>Let’s find your right fit.</h3><p>Try another filter or ask the store about {category.name.toLowerCase()}.</p><div className="catalogue-empty-actions"><button type="button" className="button button-dark" onClick={() => { setQuery(''); setBrand('all'); setCoolingType('all') }}>Reset filters</button><WhatsAppLink subject={category.name}>Ask on WhatsApp</WhatsAppLink></div></div>}
       </div>
     </section>
 

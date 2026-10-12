@@ -1,3 +1,5 @@
+import { researchedProducts } from './researchedProducts'
+
 export type CategoryId = string
 
 export type Category = {
@@ -17,6 +19,7 @@ export type Product = {
   specs: string[]
   image: string
   featured?: boolean
+  sourceUrl?: string
 }
 
 export const categories: Category[] = [
@@ -45,7 +48,7 @@ export const categories: Category[] = [
     id: 'laundry',
     name: 'Washing Machines',
     shortName: 'Laundry',
-    description: 'Front-load, top-load and twin-tub automatic washers.',
+    description: 'Automatic front-load and top-load washers, semi-automatic twin-tubs, standalone dryers and washer-dryers.',
     image: '/assets/products/midea-washing-machine.jpg',
   },
   {
@@ -129,6 +132,7 @@ export const brandList: BrandItem[] = [
 export const brands = brandList.map((item) => item.name)
 
 export const products: Product[] = [
+  ...researchedProducts,
   {
     slug: 'akt-two-gang-two-way-switch',
     name: 'AKT B6 Grey Two-Gang Two-Way Switch',
