@@ -21,6 +21,8 @@ export type Product = {
   featured?: boolean
   sourceUrl?: string
   price?: number | null
+  priceIsEstimate?: boolean
+  priceNote?: string
 }
 
 export const categories: Category[] = [

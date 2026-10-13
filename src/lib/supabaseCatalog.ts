@@ -22,6 +22,8 @@ type BrandRow = {
 
 type ProductRow = {
   price?: number | null
+  price_is_estimate?: boolean
+  price_note?: string
   slug: string
   name: string
   category_id: string
@@ -88,6 +90,8 @@ export async function fetchRemoteCatalogue(): Promise<RemoteCatalogue | null> {
     image: row.image_url,
     featured: row.featured,
     price: row.price ?? null,
+    priceIsEstimate: row.price_is_estimate ?? false,
+    priceNote: row.price_note || undefined,
   }))
 
   const settingsRow = settingsResult.data as SettingsRow | null

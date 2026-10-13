@@ -8,7 +8,7 @@ import { contact, setPageMeta } from '../lib/site'
 import { useQuoteCart } from '../context/QuoteCartContext'
 import { useCatalog } from '../context/CatalogContext'
 import { trackEvent } from '../lib/engagement'
-import { formatPrice } from '../lib/pricing'
+import { ProductPrice } from '../components/ProductPrice'
 
 export function ProductDetailPage() {
   const { slug } = useParams()
@@ -104,7 +104,7 @@ export function ProductDetailPage() {
                 <p className="mt-4 text-base leading-relaxed text-ink/70">
                   {product.description}
                 </p>
-                {formatPrice(product.price) && <div className="product-detail-price"><p>{formatPrice(product.price)}</p><small>Confirm current pricing and availability with the store on WhatsApp.</small></div>}
+                <ProductPrice product={product} detail/>
 
                 {/* Key Specifications & Features */}
                 <div className="mt-8 rounded-2xl border border-ink/10 bg-white p-6 shadow-xs">
