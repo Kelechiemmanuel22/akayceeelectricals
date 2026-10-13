@@ -3,6 +3,7 @@ import type { Category, Product } from '../data/catalog'
 import { categoryPresentations } from '../data/categoryPresentation'
 import { categoryHeroes } from '../data/categoryHeroes'
 import { WhatsAppLink } from './WhatsAppLink'
+import { matchesProductType } from '../data/productTypes'
 
 export function CategoryLanding({ category, products, selected, onSelect }: { category: Category; products: Product[]; selected: string; onSelect: (id: string) => void }) {
   const presentation = categoryPresentations[category.id]
@@ -22,7 +23,7 @@ export function CategoryLanding({ category, products, selected, onSelect }: { ca
     {presentation && <section className="cooling-choices"><div className="container">
       <div className="cooling-section-title">{category.id === 'laundry' ? <h2>Washing machines</h2> : <><p className="eyebrow">Explore the possibilities</p><h2>Find your kind of {category.shortName.toLowerCase()}.</h2></>}</div>
       <div className="cooling-choice-grid">{presentation.choices.map((choice) => {
-        const product = products.find((item) => choice.pattern.test(item.name))
+        const product = products.find((item) => item.subcategory ? matchesProductType(item, category.id, choice.id) : choice.pattern.test(item.name))
         return <a key={choice.id} href="#cooling-collection" className={`cooling-choice ${selected === choice.id ? 'selected' : ''}`} onClick={() => onSelect(choice.id)}>
           <div><h3>{choice.name}</h3>{choice.text && <p>{choice.text}</p>}<span>Explore <ArrowRight size={18}/></span></div>
           {product ? <img src={product.image} alt={product.name} loading="lazy"/> : <div className="category-choice-placeholder"><Layers size={48} strokeWidth={1}/><span>Ask about {choice.name.toLowerCase()}</span></div>}

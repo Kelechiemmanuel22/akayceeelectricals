@@ -61,7 +61,7 @@ export function CategoryPage() {
       const matchesBrand = brand === 'all' || product.brand.toLowerCase() === brand.toLowerCase()
       const matchesSearch = !search || `${product.name} ${product.brand} ${product.description} ${product.specs.join(' ')}`.toLowerCase().includes(search)
       const choice = categoryPresentations[resolvedCategoryId]?.choices.find((item) => item.id === coolingType)
-      const matchesType = coolingType === 'all' || (typeFilters ? matchesProductType(product, resolvedCategoryId, coolingType) : !choice || choice.pattern.test(product.name))
+      const matchesType = coolingType === 'all' || (product.subcategory || typeFilters ? matchesProductType(product, resolvedCategoryId, coolingType) : !choice || choice.pattern.test(product.name))
       return matchesBrand && matchesSearch && matchesType
     })
   }, [brand, categoryProducts, query, coolingType, resolvedCategoryId, typeFilters])

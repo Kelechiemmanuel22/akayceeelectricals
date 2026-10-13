@@ -1,4 +1,5 @@
 import type { Product } from './catalog'
+import { getSubcategories } from './subcategories'
 
 export type ProductTypeFilter = { id: string; label: string; matches: (product: Product) => boolean }
 const text = (product: Product) => `${product.name} ${product.specs.join(' ')}`.toLowerCase()
@@ -39,5 +40,13 @@ export const categoryProductTypes: Record<string, ProductTypeFilter[]> = {
 
 export function matchesProductType(product: Product, category: string, type: string) {
   if (type === 'all') return true
+  if (product.subcategory) {
+    const assigned = getSubcategories(category).find(item => item.id === product.subcategory)
+    if (assigned) {
+      // The dispenser is an additional feature, not an exclusive door layout.
+      if (category === 'refrigeration' && type === 'water-dispenser') return assigned.filters.includes(type) || test(/water(?:\s+and\s+ice)?\s+dispenser/)(product)
+      return assigned.filters.includes(type)
+    }
+  }
   return categoryProductTypes[category]?.find(filter => filter.id === type)?.matches(product) ?? true
 }

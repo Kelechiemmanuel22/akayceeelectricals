@@ -1,0 +1,137 @@
+[
+  {
+    "slug": "hisense-1-5hp-inverter-split-ac",
+    "category_id": "air-conditioners",
+    "subcategory_id": "inverter-split"
+  },
+  {
+    "slug": "midea-2hp-split-ac",
+    "category_id": "air-conditioners",
+    "subcategory_id": "air-conditioners"
+  },
+  {
+    "slug": "lg-55-smart-4k-uhd-tv",
+    "category_id": "televisions",
+    "subcategory_id": "televisions"
+  },
+  {
+    "slug": "samsung-65-qled-smart-tv",
+    "category_id": "televisions",
+    "subcategory_id": "televisions"
+  },
+  {
+    "slug": "hisense-double-door-refrigerator",
+    "category_id": "refrigeration",
+    "subcategory_id": "two-door"
+  },
+  {
+    "slug": "midea-front-load-washing-machine",
+    "category_id": "laundry",
+    "subcategory_id": "front-load"
+  },
+  {
+    "slug": "royal-standing-fan",
+    "category_id": "fans",
+    "subcategory_id": "fans"
+  },
+  {
+    "slug": "led-ceiling-light",
+    "category_id": "lighting",
+    "subcategory_id": "indoor"
+  },
+  {
+    "slug": "wall-socket",
+    "category_id": "electrical-materials",
+    "subcategory_id": "fittings"
+  },
+  {
+    "slug": "bruhm-microwave",
+    "category_id": "kitchen",
+    "subcategory_id": "small-appliances"
+  },
+  {
+    "slug": "electrical-cable",
+    "category_id": "electrical-materials",
+    "subcategory_id": "cables"
+  },
+  {
+    "slug": "soundbar",
+    "category_id": "audio",
+    "subcategory_id": "audio"
+  },
+  {
+    "slug": "lg-f4v5vyp2t-front-load-washer",
+    "category_id": "laundry",
+    "subcategory_id": "front-load"
+  },
+  {
+    "slug": "lg-t1369nehtf-top-load-washer",
+    "category_id": "laundry",
+    "subcategory_id": "top-load"
+  },
+  {
+    "slug": "lg-p1860rwp-semi-automatic-washer",
+    "category_id": "laundry",
+    "subcategory_id": "semi-automatic"
+  },
+  {
+    "slug": "lg-rh90v9pv8n-heat-pump-dryer",
+    "category_id": "laundry",
+    "subcategory_id": "dryers"
+  },
+  {
+    "slug": "lg-f2v5pgp2t-washer-dryer",
+    "category_id": "laundry",
+    "subcategory_id": "washer-dryers"
+  },
+  {
+    "slug": "bruhm-bfs100md-mini-refrigerator",
+    "category_id": "refrigeration",
+    "subcategory_id": "mini"
+  },
+  {
+    "slug": "lg-gn-b202sqbb-top-freezer-refrigerator",
+    "category_id": "refrigeration",
+    "subcategory_id": "top-freezer"
+  },
+  {
+    "slug": "lg-gc-b369nljm-bottom-freezer-refrigerator",
+    "category_id": "refrigeration",
+    "subcategory_id": "bottom-freezer"
+  },
+  {
+    "slug": "lg-gc-l257klkw-side-by-side-refrigerator",
+    "category_id": "refrigeration",
+    "subcategory_id": "side-by-side"
+  },
+  {
+    "slug": "bruhm-bfq510eng-four-door-refrigerator",
+    "category_id": "refrigeration",
+    "subcategory_id": "four-door"
+  },
+  {
+    "slug": "midea-mscb1b-12crfn8-inverter-split-ac",
+    "category_id": "air-conditioners",
+    "subcategory_id": "inverter-split"
+  },
+  {
+    "slug": "midea-mppdb12hrn1-portable-ac",
+    "category_id": "air-conditioners",
+    "subcategory_id": "portable"
+  },
+  {
+    "slug": "midea-mfpa18crdn1-floor-standing-ac",
+    "category_id": "air-conditioners",
+    "subcategory_id": "floor-standing"
+  },
+  {
+    "slug": "midea-mcd24hrdn1-cassette-ac",
+    "category_id": "air-conditioners",
+    "subcategory_id": "cassette"
+  },
+  {
+    "slug": "k",
+    "category_id": "kitchen",
+    "subcategory_id": "small-appliances"
+  }
+]

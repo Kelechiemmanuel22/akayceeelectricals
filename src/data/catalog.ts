@@ -23,6 +23,7 @@ export type Product = {
   price?: number | null
   priceIsEstimate?: boolean
   priceNote?: string
+  subcategory?: string
 }
 
 export const categories: Category[] = [

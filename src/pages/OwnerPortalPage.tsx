@@ -6,8 +6,10 @@ import { AdminGrowthPanel } from '../components/AdminGrowthPanel'
 import { researchedProducts } from '../data/researchedProducts'
 import { AdminTeamPanel, AdminPasswordSetup } from '../components/AdminTeamPanel'
 import { parsePrice } from '../lib/pricing'
+import { canonicalCategory, getSubcategories, suggestSubcategory, validSubcategory } from '../data/subcategories'
 
 type ProductRow = {
+  subcategory_id?: string | null
   price?: number | null
   price_is_estimate?: boolean
   price_note?: string
@@ -189,16 +191,18 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   const [busy, setBusy] = useState(true)
   const [importingModels, setImportingModels] = useState(false)
   const [pricesEnabled, setPricesEnabled] = useState(false)
+  const [subcategoriesEnabled, setSubcategoriesEnabled] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase) return
     setBusy(true)
-    const [productResult, categoryResult, brandResult, settingsResult, priceResult] = await Promise.all([
+    const [productResult, categoryResult, brandResult, settingsResult, priceResult, subcategoryResult] = await Promise.all([
       supabase.from('products').select('*').order('sort_order'),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('brands').select('*').order('sort_order'),
       supabase.from('site_settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('products').select('price').limit(1),
+      supabase.from('products').select('subcategory_id').limit(1),
     ])
     if (productResult.error) setNotice(productResult.error.message)
     else setProducts((productResult.data || []) as ProductRow[])
@@ -208,6 +212,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
     else setBrands((brandResult.data || []) as BrandRow[])
     setSettings(settingsResult.data as SettingsRow | null)
     setPricesEnabled(!priceResult.error)
+    setSubcategoriesEnabled(!subcategoryResult.error)
     setBusy(false)
   }, [])
 
@@ -224,6 +229,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         if (!category) throw new Error(`Create the ${model.category} category before importing model examples.`)
         return {
           slug: model.slug, name: model.name, category_id: category.id, brand_name: model.brand,
+          ...(subcategoriesEnabled ? { subcategory_id: suggestSubcategory(model.category, model.name, model.specs) || null } : {}),
           description: model.description, specs: [...model.specs, `Manufacturer reference: ${model.sourceUrl}`],
           image_url: model.image, featured: false, active: true, sort_order: 200 + index,
         }
@@ -353,19 +359,23 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         {section === 'settings' && settings && <form className="owner-settings-card owner-settings-standalone" onSubmit={saveSettings}><div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Business details</p><h2>Public contact information</h2></div><button className="button button-dark">Save details</button></div><div className="owner-form-grid"><label>Phone<input value={settings.phone} onChange={(event) => setSettings({ ...settings, phone: event.target.value })} /></label><label>WhatsApp number<input value={settings.whatsapp} onChange={(event) => setSettings({ ...settings, whatsapp: event.target.value })} /></label><label>Email<input type="email" value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} /></label><label>Instagram URL<input value={settings.instagram_url} onChange={(event) => setSettings({ ...settings, instagram_url: event.target.value })} /></label><label className="owner-wide">Address<input value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} /></label></div></form>}
       </section>
 
-      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
+      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} subcategoriesEnabled={subcategoriesEnabled} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
       {(creatingCategory || editingCategory) && <CategoryEditor category={editingCategory || emptyCategory} isNew={creatingCategory} onClose={() => { setCreatingCategory(false); setEditingCategory(null) }} onSaved={async (message) => { setNotice(message); setCreatingCategory(false); setEditingCategory(null); await load() }} />}
       {(creatingBrand || editingBrand) && <BrandEditor brand={editingBrand || emptyBrand} isNew={creatingBrand} onClose={() => { setCreatingBrand(false); setEditingBrand(null) }} onSaved={async (message) => { setNotice(message); setCreatingBrand(false); setEditingBrand(null); await load() }} />}
     </main>
   )
 }
 
-function ProductEditor({ product, categories, brands, pricesEnabled, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; pricesEnabled: boolean; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
+function ProductEditor({ product, categories, brands, pricesEnabled, subcategoriesEnabled, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; pricesEnabled: boolean; subcategoriesEnabled: boolean; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
   const [form, setForm] = useState(product)
   const [specText, setSpecText] = useState(product.specs.join('\n'))
   const [priceText, setPriceText] = useState(product.price == null ? '' : String(product.price))
   const [priceIsEstimate, setPriceIsEstimate] = useState(product.price_is_estimate ?? false)
   const [priceNote, setPriceNote] = useState(product.price_note || '')
+  const [subcategory, setSubcategory] = useState(product.subcategory_id || suggestSubcategory(product.category_id, product.name, product.specs))
+  const mainCategory = canonicalCategory(form.category_id)
+  const categoryOptions = categories.filter((item, index, all) => all.findIndex(other => canonicalCategory(other.id) === canonicalCategory(item.id)) === index)
+  const subcategoryOptions = getSubcategories(form.category_id)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -381,12 +391,13 @@ function ProductEditor({ product, categories, brands, pricesEnabled, onClose, on
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!supabase) return
+    if (subcategoriesEnabled && !validSubcategory(form.category_id, subcategory)) { setError('Choose a subcategory under the selected main category.'); return }
     let price: number | null
     try { price = parsePrice(priceText) } catch (error) { setError(error instanceof Error ? error.message : 'Invalid price.'); return }
     setSaving(true)
     setError('')
     const { id: _ignoredId, ...editable } = 'id' in form ? form : { ...form, id: '' }
-    const payload = { ...editable, ...(pricesEnabled ? { price } : {}), ...('price_is_estimate' in product ? { price_is_estimate: price != null && priceIsEstimate, price_note: price != null ? priceNote.trim() : '' } : {}), slug: form.slug || slugify(form.name), specs: specText.split('\n').map((item) => item.trim()).filter(Boolean) }
+    const payload = { ...editable, ...(subcategoriesEnabled ? { subcategory_id: subcategory } : {}), ...(pricesEnabled ? { price } : {}), ...('price_is_estimate' in product ? { price_is_estimate: price != null && priceIsEstimate, price_note: price != null ? priceNote.trim() : '' } : {}), slug: form.slug || slugify(form.name), specs: specText.split('\n').map((item) => item.trim()).filter(Boolean) }
     const result = 'id' in product
       ? await supabase.from('products').update(payload).eq('id', product.id)
       : await supabase.from('products').insert(payload)
@@ -395,7 +406,7 @@ function ProductEditor({ product, categories, brands, pricesEnabled, onClose, on
     else await onSaved(`Saved ${payload.name}. The public catalogue will update automatically.`)
   }
 
-  return <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Product editor"><form className="owner-editor" onSubmit={save}><div className="owner-editor-header"><div><p className="eyebrow text-gold-dark">Catalogue editor</p><h2>{'id' in product ? 'Edit product' : 'Add product'}</h2></div><button type="button" onClick={onClose} aria-label="Close editor"><X /></button></div><div className="owner-form-grid"><label>Product name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value, slug: form.slug || slugify(event.target.value) })} required /></label><label>URL slug<input value={form.slug} onChange={(event) => setForm({ ...form, slug: slugify(event.target.value) })} required /></label><label>Category<select value={form.category_id} onChange={(event) => setForm({ ...form, category_id: event.target.value })}>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<select value={form.brand_name} onChange={(event) => setForm({ ...form, brand_name: event.target.value })}>{brands.map((item) => <option key={item.name}>{item.name}</option>)}<option>Generic</option></select></label><label>Price (NGN) — optional<input type="number" min="0" max="9999999999.99" step="0.01" disabled={!pricesEnabled} value={priceText} onChange={(event) => setPriceText(event.target.value)} placeholder="Leave blank for enquiry" /><small>{pricesEnabled ? 'Shown only on category listings and product details. Leave blank to hide the amount.' : 'Apply Supabase migration 004_product_prices.sql to enable pricing. Other product edits still work.'}</small></label>{'price_is_estimate' in product && <><label className="owner-check"><input type="checkbox" checked={priceIsEstimate} onChange={event => setPriceIsEstimate(event.target.checked)} /> Label as estimated price</label><label>Price note / variant basis<input value={priceNote} maxLength={300} onChange={event => setPriceNote(event.target.value)} placeholder="e.g. Per 100m roll, 1.5mm²" /><small>Uncheck estimated only after confirming the store selling price.</small></label></>}<label className="owner-wide">Description<textarea rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required /></label><label className="owner-wide">Specifications — one per line<textarea rows={5} value={specText} onChange={(event) => setSpecText(event.target.value)} /></label><label className="owner-wide">Image URL<input value={form.image_url} onChange={(event) => setForm({ ...form, image_url: event.target.value })} required /></label><label className="owner-upload"><ImagePlus size={20} /> Upload product image<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void uploadImage(event)} /></label><label className="owner-check"><input type="checkbox" checked={form.featured} onChange={(event) => setForm({ ...form, featured: event.target.checked })} /> Featured product</label><label className="owner-check"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /> Visible publicly</label></div>{form.image_url && <img className="owner-image-preview" src={form.image_url} alt="Product preview" />}{error && <div className="owner-error">{error}</div>}<div className="owner-editor-actions"><button type="button" className="button button-light" onClick={onClose}>Cancel</button><button className="button button-dark" disabled={saving}>{saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />} Save product</button></div></form></div>
+  return <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Product editor"><form className="owner-editor" onSubmit={save}><div className="owner-editor-header"><div><p className="eyebrow text-gold-dark">Catalogue editor</p><h2>{'id' in product ? 'Edit product' : 'Add product'}</h2></div><button type="button" onClick={onClose} aria-label="Close editor"><X /></button></div><div className="owner-form-grid"><label>Product name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value, slug: form.slug || slugify(event.target.value) })} required /></label><label>URL slug<input value={form.slug} onChange={(event) => setForm({ ...form, slug: slugify(event.target.value) })} required /></label><label>Main category<select value={mainCategory} required onChange={event => { const selected = categoryOptions.find(item => canonicalCategory(item.id) === event.target.value); if (selected) { setForm({ ...form, category_id: selected.id }); setSubcategory('') } }}>{categoryOptions.map(item => <option key={item.id} value={canonicalCategory(item.id)}>{canonicalCategory(item.id) === 'cooling' ? 'Cooling' : canonicalCategory(item.id) === 'entertainment' ? 'Entertainment' : item.name}</option>)}</select></label><label>Subcategory<select value={subcategory} required={subcategoriesEnabled} disabled={!subcategoriesEnabled} onChange={event => setSubcategory(event.target.value)}><option value="">Choose subcategory</option>{subcategoryOptions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<select value={form.brand_name} onChange={(event) => setForm({ ...form, brand_name: event.target.value })}>{brands.map((item) => <option key={item.name}>{item.name}</option>)}<option>Generic</option></select></label><label>Price (NGN) — optional<input type="number" min="0" max="9999999999.99" step="0.01" disabled={!pricesEnabled} value={priceText} onChange={(event) => setPriceText(event.target.value)} placeholder="Leave blank for enquiry" /><small>{pricesEnabled ? 'Shown only on category listings and product details. Leave blank to hide the amount.' : 'Apply Supabase migration 004_product_prices.sql to enable pricing. Other product edits still work.'}</small></label>{'price_is_estimate' in product && <><label className="owner-check"><input type="checkbox" checked={priceIsEstimate} onChange={event => setPriceIsEstimate(event.target.checked)} /> Label as estimated price</label><label>Price note / variant basis<input value={priceNote} maxLength={300} onChange={event => setPriceNote(event.target.value)} placeholder="e.g. Per 100m roll, 1.5mm²" /><small>Uncheck estimated only after confirming the store selling price.</small></label></>}<label className="owner-wide">Description<textarea rows={4} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required /></label><label className="owner-wide">Specifications — one per line<textarea rows={5} value={specText} onChange={(event) => setSpecText(event.target.value)} /></label><label className="owner-wide">Image URL<input value={form.image_url} onChange={(event) => setForm({ ...form, image_url: event.target.value })} required /></label><label className="owner-upload"><ImagePlus size={20} /> Upload product image<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void uploadImage(event)} /></label><label className="owner-check"><input type="checkbox" checked={form.featured} onChange={(event) => setForm({ ...form, featured: event.target.checked })} /> Featured product</label><label className="owner-check"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} /> Visible publicly</label></div>{form.image_url && <img className="owner-image-preview" src={form.image_url} alt="Product preview" />}{error && <div className="owner-error">{error}</div>}<div className="owner-editor-actions"><button type="button" className="button button-light" onClick={onClose}>Cancel</button><button className="button button-dark" disabled={saving}>{saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />} Save product</button></div></form></div>
 }
 
 async function uploadCatalogueImage(file: File, folder: string) {

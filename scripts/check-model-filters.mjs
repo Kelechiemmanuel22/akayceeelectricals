@@ -4,7 +4,11 @@ import { stripTypeScriptTypes } from 'node:module'
 
 async function loadData(path) {
   const source = await readFile(new URL(path, import.meta.url), 'utf8')
-  const outputText = stripTypeScriptTypes(source)
+  let outputText = stripTypeScriptTypes(source)
+  if (outputText.includes("from './subcategories'")) {
+    const dependency = stripTypeScriptTypes(await readFile(new URL('../src/data/subcategories.ts', import.meta.url), 'utf8'))
+    outputText = outputText.replace("'./subcategories'", JSON.stringify(`data:text/javascript;base64,${Buffer.from(dependency).toString('base64')}`))
+  }
   return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
 }
 const { researchedProducts: models } = await loadData('../src/data/researchedProducts.ts')
