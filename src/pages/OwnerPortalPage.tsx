@@ -13,6 +13,7 @@ import { AdminOverview } from '../components/AdminOverview'
 import { AdminMediaPanel, type AdminMediaItem } from '../components/AdminMediaPanel'
 import { AdminDraftProvider, useAdminDraftState, useDiscardAdminDraft } from '../components/AdminDraftProvider'
 import { clearAdminDrafts } from '../lib/adminDrafts'
+import { AdminForgotPassword } from '../components/AdminForgotPassword'
 import '../admin.css'
 
 type ProductRow = {
@@ -97,6 +98,14 @@ export function OwnerPortalPage() {
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotPassword, setForgotPassword] = useState(false)
+  const [resetPassword, setResetPassword] = useState(() => new URLSearchParams(window.location.search).get('reset') === '1')
+  const [authNotice, setAuthNotice] = useState('')
+  const [invalidRecovery, setInvalidRecovery] = useState(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1))
+    const query = new URLSearchParams(window.location.search)
+    return Boolean(hash.get('error') || query.get('error'))
+  })
 
   const userId = session?.user.id
   const authUserId = useRef<string | null>(null)
@@ -114,6 +123,7 @@ export function OwnerPortalPage() {
     })
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY') setResetPassword(true)
       if (event === 'SIGNED_OUT' && authUserId.current) {
         try { clearAdminDrafts(authUserId.current, window.localStorage) } catch { /* Storage may be disabled. */ }
       }
@@ -163,6 +173,11 @@ export function OwnerPortalPage() {
   if (!isSupabaseConfigured) return <PortalMessage title="Supabase is not connected" text="Add the project URL and public anon key to the local environment before using the owner portal." />
   if (checking) return <PortalMessage title="Checking secure access" text="Verifying your Supabase session and owner role." loading />
 
+  if (forgotPassword) return <AdminForgotPassword initialEmail={email} onBack={() => {
+    setForgotPassword(false); setResetPassword(false); setInvalidRecovery(false)
+    window.history.replaceState(null, '', '/ak-owner-portal')
+  }}/>
+
   if (!session) {
     return (
       <main className="owner-login-shell">
@@ -171,15 +186,28 @@ export function OwnerPortalPage() {
           <p className="eyebrow text-gold-dark">Private owner access</p>
           <h1>Manage the A Kaycee catalogue.</h1>
           <p>This page is protected by Supabase authentication and database security rules.</p>
+          {(invalidRecovery || resetPassword) && <p className="owner-error" role="alert">This reset link is invalid or has expired. Use “Forgot password?” to request a new one.</p>}
+          {authNotice && <p className="owner-notice" role="status">{authNotice}</p>}
           <label>Email address<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required /></label>
           <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>
           {authError && <div className="owner-error">{authError}</div>}
           <button className="button button-dark" disabled={loading}>{loading ? <Loader2 className="animate-spin" size={17} /> : <ShieldCheck size={17} />} Sign in securely</button>
+          <button type="button" className="owner-back-link" disabled={loading} onClick={() => { setAuthError(''); setPassword(''); setForgotPassword(true) }}>Forgot password?</button>
           <a href="/" className="owner-back-link">Return to public website</a>
         </form>
       </main>
     )
   }
+
+  if (resetPassword && invalidRecovery) return <PortalMessage title="Request a new reset link" text="This password-reset link is invalid or has expired. Request a fresh link and open the newest email." action={<button className="button button-dark" onClick={() => setForgotPassword(true)}>Request reset link</button>}/>
+
+  if (resetPassword) return <AdminPasswordSetup recovery onComplete={() => {
+    void supabase?.auth.signOut().then(({ error }) => {
+      if (error) { setAuthError('Your password was updated, but signing out failed. Please try signing out again.'); return }
+      setResetPassword(false); setSetupPassword(false); setAuthNotice('Password updated. Sign in using your new password.'); setAuthError('')
+      window.history.replaceState(null, '', '/ak-owner-portal')
+    })
+  }}/>
 
   if (setupPassword) return <AdminPasswordSetup onComplete={() => { setSetupPassword(false); window.history.replaceState(null, '', '/ak-owner-portal') }} />
 

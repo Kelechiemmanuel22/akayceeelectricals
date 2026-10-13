@@ -52,7 +52,7 @@ export function AdminTeamPanel() {
   </div>
 }
 
-export function AdminPasswordSetup({ onComplete }: { onComplete: () => void }) {
+export function AdminPasswordSetup({ onComplete, recovery = false }: { onComplete: () => void; recovery?: boolean }) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -60,6 +60,7 @@ export function AdminPasswordSetup({ onComplete }: { onComplete: () => void }) {
   async function save(event: React.FormEvent) {
     event.preventDefault()
     if (!supabase || busy) return
+    if (password.length < 12) { setError('Use at least 12 characters for your password.'); return }
     if (password !== confirm) { setError('Passwords do not match.'); return }
     setBusy(true); setError('')
     try {
@@ -69,5 +70,5 @@ export function AdminPasswordSetup({ onComplete }: { onComplete: () => void }) {
     } catch (error) { setError(error instanceof Error ? error.message : 'Could not set your password.') }
     finally { setBusy(false) }
   }
-  return <main className="owner-login-shell"><form className="owner-login-card" onSubmit={save}><ShieldCheck size={30}/><h1>Welcome to the team.</h1><p>Choose your own password for future admin sign-ins. Use at least 12 characters.</p><label>New password<input type="password" minLength={12} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" required/></label><label>Confirm password<input type="password" minLength={12} value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" required/></label>{error && <div role="alert" className="owner-error">{error}</div>}<button className="button button-dark" disabled={busy}>{busy ? 'Saving…' : 'Set password and continue'}</button><button type="button" className="owner-back-link" onClick={() => void supabase?.auth.signOut()}>Sign out</button></form></main>
+  return <main className="owner-login-shell"><form className="owner-login-card" onSubmit={save}><ShieldCheck size={30}/><h1>{recovery ? 'Reset your password.' : 'Welcome to the team.'}</h1><p>{recovery ? 'Choose a new password for your admin account. Use at least 12 characters.' : 'Choose your own password for future admin sign-ins. Use at least 12 characters.'}</p><label>New password<input type="password" minLength={12} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" required/></label><label>Confirm password<input type="password" minLength={12} value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" required/></label>{error && <div role="alert" className="owner-error">{error}</div>}<button className="button button-dark" disabled={busy}>{busy ? 'Saving…' : recovery ? 'Update password' : 'Set password and continue'}</button><button type="button" className="owner-back-link" onClick={() => void supabase?.auth.signOut()}>Sign out</button></form></main>
 }
