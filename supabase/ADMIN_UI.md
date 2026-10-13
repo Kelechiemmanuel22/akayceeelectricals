@@ -15,6 +15,10 @@ The `/ak-owner-portal` route uses the approved navy/blue/orange dashboard design
 
 ## Verification
 
+Catalogue editor drafts and the selected workspace section resume on the same browser/origin for ten minutes after the last change. Drafts are stored locally per signed-in user, never published automatically, and never contain credentials. Cancel and successful Save discard the relevant editor draft; explicit sign-out clears the user's draft storage. Browser-tab auth refreshes no longer unmount the dashboard. Expired drafts are discarded on the next portal visit; an already-open form is not forcibly erased mid-edit. Completed upload URLs can resume, but an unuploaded file selection cannot. Localhost and production have separate browser storage.
+
+Run `node scripts/check-admin-drafts.mjs` to check expiry, isolation, corruption handling and storage failures. Browser verification should leave and return to a partially filled category form, reload it, then Cancel and confirm the next form starts blank. Do not publish test catalogue records.
+
 Run `npm run build`, `node scripts/check-admin-insights.mjs`, and the existing pricing, model-filter and subcategory checks. Preview as a signed-in owner; verify navigation/search, date-range changes, dependent category selections and responsive mobile drawer behaviour. During UI verification, avoid submitting real catalogue changes or sending campaigns merely to test the design.
 
 Dialog and mobile-navigation focus is constrained to the active surface, with Escape dismissal and focus restoration. Closed mobile navigation is inert. Reduced-motion preferences and visible keyboard focus are respected.

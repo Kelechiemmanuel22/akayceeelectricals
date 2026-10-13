@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, FolderPlus, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { canonicalCategory, type SubcategoryRow } from '../data/subcategories'
 import { supabase } from '../lib/supabase'
+import { useAdminDraftState, useDiscardAdminDraft } from './AdminDraftProvider'
 
 type Category = { id: string; name: string }
 type Product = { category_id: string; subcategory_id?: string | null }
@@ -9,12 +10,21 @@ const categoryName = (item: Category) => canonicalCategory(item.id) === 'cooling
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 export function AdminSubcategoriesPanel({ categories, products, rows, enabled, onSaved }: { categories: Category[]; products: Product[]; rows: SubcategoryRow[]; enabled: boolean; onSaved: () => Promise<void> }) {
-  const [filter, setFilter] = useState('')
-  const [editing, setEditing] = useState<SubcategoryRow | null>(null)
-  const [creating, setCreating] = useState(false)
+  const [filter, setFilter] = useAdminDraftState('subcategories-filter', '')
+  const [editing, setEditing] = useAdminDraftState<SubcategoryRow | null>('subcategories-editing', null)
+  const [creating, setCreating] = useAdminDraftState('subcategories-creating', false)
+  const discardDraft = useDiscardAdminDraft()
   const [notice, setNotice] = useState('')
   const [deleting, setDeleting] = useState(false)
   const options = categories.filter((item, index, all) => all.findIndex(other => canonicalCategory(other.id) === canonicalCategory(item.id)) === index)
+  const restoredEditorChecked = useRef(false)
+  useEffect(() => {
+    if (!enabled || restoredEditorChecked.current) return
+    restoredEditorChecked.current = true
+    if (editing && !rows.some(item => item.id === editing.id && item.category_id === editing.category_id)) {
+      discardDraft('subcategory:'); setEditing(null); setNotice('The subcategory you were editing is no longer available.')
+    }
+  }, [enabled, rows, editing, discardDraft, setEditing])
   const count = (row: SubcategoryRow) => products.filter(item => canonicalCategory(item.category_id) === canonicalCategory(row.category_id) && item.subcategory_id === row.id).length
   const remove = async (row: SubcategoryRow) => {
     if (!supabase || deleting || count(row) || !window.confirm(`Delete "${row.name}"? This removes its product filter from the website.`)) return
@@ -33,14 +43,15 @@ export function AdminSubcategoriesPanel({ categories, products, rows, enabled, o
     <div className="owner-form-grid"><label>Main category<select value={filter} onChange={event => setFilter(event.target.value)}><option value="">All categories</option>{options.map(item => <option key={item.id} value={canonicalCategory(item.id)}>{categoryName(item)}</option>)}</select></label></div>
     <div className="owner-product-list">{rows.filter(row => !filter || canonicalCategory(row.category_id) === filter).map(row => <article className="owner-subcategory-row" key={`${row.category_id}/${row.id}`}><div><strong>{row.name}</strong><p>{categoryName(categories.find(item => item.id === row.category_id) || { id: row.category_id, name: row.category_id })} · {count(row)} assigned products</p></div><div className="owner-row-actions"><button type="button" aria-label={`Edit ${row.name}`} onClick={() => setEditing(row)}><Pencil size={18}/></button><button type="button" aria-label={`Delete ${row.name}`} title={count(row) ? 'Move its products to another subcategory before deleting.' : 'Delete subcategory'} disabled={deleting || count(row) > 0} onClick={() => void remove(row)}><Trash2 size={18}/></button></div></article>)}</div>
     {enabled && !rows.some(row => !filter || canonicalCategory(row.category_id) === filter) && <p>No subcategories yet. Add one to start organising products.</p>}
-    {(creating || editing) && <SubcategoryEditor row={editing} initialCategory={options.find(item => canonicalCategory(item.id) === filter)?.id || ''} categories={options} rows={rows} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async () => { setCreating(false); setEditing(null); setNotice('Subcategory saved. It is now available in the product editor and website filters.'); await onSaved() }}/ >}
+    {enabled && (creating || editing) && <SubcategoryEditor row={editing} initialCategory={options.find(item => canonicalCategory(item.id) === filter)?.id || ''} categories={options} rows={rows} onClose={() => { discardDraft('subcategory:'); setCreating(false); setEditing(null) }} onSaved={async () => { discardDraft('subcategory:'); setCreating(false); setEditing(null); setNotice('Subcategory saved. It is now available in the product editor and website filters.'); await onSaved() }}/ >}
   </>
 }
 
 function SubcategoryEditor({ row, initialCategory, categories, rows, onClose, onSaved }: { row: SubcategoryRow | null; initialCategory: string; categories: Category[]; rows: SubcategoryRow[]; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [category, setCategory] = useState(row?.category_id || initialCategory)
-  const [name, setName] = useState(row?.name || '')
-  const [order, setOrder] = useState(row?.sort_order ?? 100)
+  const draftKey = `subcategory:${row ? `${row.category_id}/${row.id}` : 'new'}:`
+  const [category, setCategory] = useAdminDraftState(draftKey + 'category', row?.category_id || initialCategory)
+  const [name, setName] = useAdminDraftState(draftKey + 'name', row?.name || '')
+  const [order, setOrder] = useAdminDraftState(draftKey + 'order', row?.sort_order ?? 100)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const save = async (event: React.FormEvent) => {
@@ -48,7 +59,7 @@ function SubcategoryEditor({ row, initialCategory, categories, rows, onClose, on
     if (!supabase || saving) return
     const id = row?.id || slugify(name)
     if (!category || !name.trim() || !id) { setError('Choose a main category and enter a subcategory name.'); return }
-    if (rows.some(item => canonicalCategory(item.category_id) === canonicalCategory(category) && item !== row && (item.id === id || item.name.toLowerCase() === name.trim().toLowerCase()))) { setError('This subcategory already exists under the selected category.'); return }
+    if (rows.some(item => canonicalCategory(item.category_id) === canonicalCategory(category) && !(row && item.id === row.id && item.category_id === row.category_id) && (item.id === id || item.name.toLowerCase() === name.trim().toLowerCase()))) { setError('This subcategory already exists under the selected category.'); return }
     setSaving(true); setError('')
     try {
       const result = row

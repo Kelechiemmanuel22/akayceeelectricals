@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { BarChart3, Check, FolderPlus, ImagePlus, Loader2, LogOut, PackagePlus, Pencil, ShieldCheck, Tags, Trash2, X } from 'lucide-react'
 import { CATALOG_BUCKET, isSupabaseConfigured, supabase } from '../lib/supabase'
@@ -11,6 +11,8 @@ import { AdminSubcategoriesPanel } from '../components/AdminSubcategoriesPanel'
 import { AdminWorkspace, type AdminSection, type WorkspaceSearchItem } from '../components/AdminWorkspace'
 import { AdminOverview } from '../components/AdminOverview'
 import { AdminMediaPanel, type AdminMediaItem } from '../components/AdminMediaPanel'
+import { AdminDraftProvider, useAdminDraftState, useDiscardAdminDraft } from '../components/AdminDraftProvider'
+import { clearAdminDrafts } from '../lib/adminDrafts'
 import '../admin.css'
 
 type ProductRow = {
@@ -96,6 +98,9 @@ export function OwnerPortalPage() {
   const [authError, setAuthError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const userId = session?.user.id
+  const authUserId = useRef<string | null>(null)
+
   useEffect(() => {
     if (!supabase) {
       setChecking(false)
@@ -103,36 +108,46 @@ export function OwnerPortalPage() {
     }
 
     void supabase.auth.getSession().then(({ data }) => {
+      authUserId.current = data.session?.user.id || null
       setSession(data.session)
-      setChecking(false)
+      if (!data.session) setChecking(false)
     })
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'SIGNED_OUT' && authUserId.current) {
+        try { clearAdminDrafts(authUserId.current, window.localStorage) } catch { /* Storage may be disabled. */ }
+      }
+      if (nextSession && nextSession.user.id !== authUserId.current) setChecking(true)
+      authUserId.current = nextSession?.user.id || null
       setSession(nextSession)
+      if (!nextSession) setChecking(false)
     })
 
     return () => data.subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
-    if (!supabase || !session) {
+    if (!supabase || !userId) {
       setIsOwner(false)
       setIsAdmin(false)
       return
     }
 
+    let cancelled = false
     setChecking(true)
     void supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', userId)
       .maybeSingle()
       .then(({ data, error }) => {
+        if (cancelled) return
         setIsOwner(!error && data?.role === 'owner')
         setIsAdmin(!error && ['owner', 'admin'].includes(data?.role || ''))
         setChecking(false)
       })
-  }, [session])
+    return () => { cancelled = true }
+  }, [userId])
 
   const signIn = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -172,7 +187,7 @@ export function OwnerPortalPage() {
     return <PortalMessage title="Administrator access required" text="This account is signed in, but the owner has not granted it access to manage the website." action={<button className="button button-dark" onClick={() => void supabase?.auth.signOut()}>Sign out</button>} />
   }
 
-  return <OwnerDashboard session={session} isOwner={isOwner} />
+  return <AdminDraftProvider key={session.user.id} userId={session.user.id}><OwnerDashboard session={session} isOwner={isOwner} /></AdminDraftProvider>
 }
 
 function PortalMessage({ title, text, loading, action }: { title: string; text: string; loading?: boolean; action?: React.ReactNode }) {
@@ -184,16 +199,17 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [brands, setBrands] = useState<BrandRow[]>([])
   const [settings, setSettings] = useState<SettingsRow | null>(null)
-  const [section, setSection] = useState<AdminSection>('overview')
+  const discardDraft = useDiscardAdminDraft()
+  const [section, setSection] = useAdminDraftState<AdminSection>('section', 'overview')
   const [managedSubcategories, setManagedSubcategories] = useState<SubcategoryRow[]>([])
   const subcategoryDefinitions = useMemo(() => managedSubcategories.map(mapSubcategory), [managedSubcategories])
-  const [editing, setEditing] = useState<ProductRow | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null)
-  const [creatingCategory, setCreatingCategory] = useState(false)
-  const [editingBrand, setEditingBrand] = useState<BrandRow | null>(null)
-  const [creatingBrand, setCreatingBrand] = useState(false)
-  const [query, setQuery] = useState('')
+  const [editing, setEditing] = useAdminDraftState<ProductRow | null>('editing', null)
+  const [creating, setCreating] = useAdminDraftState('creating', false)
+  const [editingCategory, setEditingCategory] = useAdminDraftState<CategoryRow | null>('editingCategory', null)
+  const [creatingCategory, setCreatingCategory] = useAdminDraftState('creatingCategory', false)
+  const [editingBrand, setEditingBrand] = useAdminDraftState<BrandRow | null>('editingBrand', null)
+  const [creatingBrand, setCreatingBrand] = useAdminDraftState('creatingBrand', false)
+  const [query, setQuery] = useAdminDraftState('query', '')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(true)
   const [importingModels, setImportingModels] = useState(false)
@@ -226,6 +242,15 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   }, [])
 
   useEffect(() => { void load() }, [load])
+
+  const restoredEditorsChecked = useRef(false)
+  useEffect(() => {
+    if (busy || restoredEditorsChecked.current) return
+    restoredEditorsChecked.current = true
+    if (editing && !products.some(item => item.id === editing.id)) { discardDraft('product:'); setEditing(null); setNotice('The product you were editing is no longer available.') }
+    if (editingCategory && !categories.some(item => item.id === editingCategory.id)) { discardDraft('category:'); setEditingCategory(null); setNotice('The category you were editing is no longer available.') }
+    if (editingBrand && !brands.some(item => item.id === editingBrand.id)) { discardDraft('brand:'); setEditingBrand(null); setNotice('The brand you were editing is no longer available.') }
+  }, [busy, products, categories, brands, editing, editingCategory, editingBrand, discardDraft, setEditing, setEditingCategory, setEditingBrand])
 
   const importModelExamples = async () => {
     if (!supabase || importingModels || busy) return
@@ -370,20 +395,21 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         {section === 'settings' && settings && <form className="owner-settings-card owner-settings-standalone" onSubmit={saveSettings}><div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Business details</p><h1>Public contact information</h1></div><button className="button button-dark">Save details</button></div><div className="owner-form-grid"><label>Phone<input value={settings.phone} onChange={(event) => setSettings({ ...settings, phone: event.target.value })} /></label><label>WhatsApp number<input value={settings.whatsapp} onChange={(event) => setSettings({ ...settings, whatsapp: event.target.value })} /></label><label>Email<input type="email" value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} /></label><label>Instagram URL<input value={settings.instagram_url} onChange={(event) => setSettings({ ...settings, instagram_url: event.target.value })} /></label><label className="owner-wide">Address<input value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} /></label></div></form>}
       </div>
 
-      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} subcategoriesEnabled={subcategoriesEnabled} definitions={subcategoryDefinitions} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
-      {(creatingCategory || editingCategory) && <CategoryEditor category={editingCategory || emptyCategory} isNew={creatingCategory} onClose={() => { setCreatingCategory(false); setEditingCategory(null) }} onSaved={async (message) => { setNotice(message); setCreatingCategory(false); setEditingCategory(null); await load() }} />}
-      {(creatingBrand || editingBrand) && <BrandEditor brand={editingBrand || emptyBrand} isNew={creatingBrand} onClose={() => { setCreatingBrand(false); setEditingBrand(null) }} onSaved={async (message) => { setNotice(message); setCreatingBrand(false); setEditingBrand(null); await load() }} />}
+      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} subcategoriesEnabled={subcategoriesEnabled} definitions={subcategoryDefinitions} onClose={() => { discardDraft('product:'); setCreating(false); setEditing(null) }} onSaved={async (message) => { discardDraft('product:'); setNotice(message); setCreating(false); setEditing(null); await load() }} />}
+      {(creatingCategory || editingCategory) && <CategoryEditor category={editingCategory || emptyCategory} isNew={creatingCategory} onClose={() => { discardDraft('category:'); setCreatingCategory(false); setEditingCategory(null) }} onSaved={async (message) => { discardDraft('category:'); setNotice(message); setCreatingCategory(false); setEditingCategory(null); await load() }} />}
+      {(creatingBrand || editingBrand) && <BrandEditor brand={editingBrand || emptyBrand} isNew={creatingBrand} onClose={() => { discardDraft('brand:'); setCreatingBrand(false); setEditingBrand(null) }} onSaved={async (message) => { discardDraft('brand:'); setNotice(message); setCreatingBrand(false); setEditingBrand(null); await load() }} />}
     </AdminWorkspace>
   )
 }
 
 function ProductEditor({ product, categories, brands, pricesEnabled, subcategoriesEnabled, definitions, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; pricesEnabled: boolean; subcategoriesEnabled: boolean; definitions: ManagedSubcategory[]; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
-  const [form, setForm] = useState(product)
-  const [specText, setSpecText] = useState(product.specs.join('\n'))
-  const [priceText, setPriceText] = useState(product.price == null ? '' : String(product.price))
-  const [priceIsEstimate, setPriceIsEstimate] = useState(product.price_is_estimate ?? false)
-  const [priceNote, setPriceNote] = useState(product.price_note || '')
-  const [subcategory, setSubcategory] = useState(product.subcategory_id || suggestSubcategory(product.category_id, product.name, product.specs))
+  const draftKey = `product:${'id' in product ? product.id : 'new'}:`
+  const [form, setForm] = useAdminDraftState(draftKey + 'form', product)
+  const [specText, setSpecText] = useAdminDraftState(draftKey + 'specText', product.specs.join('\n'))
+  const [priceText, setPriceText] = useAdminDraftState(draftKey + 'priceText', product.price == null ? '' : String(product.price))
+  const [priceIsEstimate, setPriceIsEstimate] = useAdminDraftState(draftKey + 'priceIsEstimate', product.price_is_estimate ?? false)
+  const [priceNote, setPriceNote] = useAdminDraftState(draftKey + 'priceNote', product.price_note || '')
+  const [subcategory, setSubcategory] = useAdminDraftState(draftKey + 'subcategory', product.subcategory_id || suggestSubcategory(product.category_id, product.name, product.specs))
   const mainCategory = canonicalCategory(form.category_id)
   const categoryOptions = categories.filter((item, index, all) => all.findIndex(other => canonicalCategory(other.id) === canonicalCategory(item.id)) === index)
   const subcategoryOptions = getSubcategories(form.category_id, definitions)
@@ -439,7 +465,7 @@ async function uploadCatalogueImage(file: File, folder: string) {
 }
 
 function CategoryEditor({ category, isNew, onClose, onSaved }: { category: CategoryRow; isNew: boolean; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
-  const [form, setForm] = useState(category)
+  const [form, setForm] = useAdminDraftState(`category:${isNew ? 'new' : category.id}:form`, category)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -468,8 +494,9 @@ function CategoryEditor({ category, isNew, onClose, onSaved }: { category: Categ
 }
 
 function BrandEditor({ brand, isNew, onClose, onSaved }: { brand: BrandRow | Omit<BrandRow, 'id'>; isNew: boolean; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
-  const [form, setForm] = useState(brand)
-  const [tags, setTags] = useState(brand.category_tags.join('\n'))
+  const draftKey = `brand:${'id' in brand ? brand.id : 'new'}:`
+  const [form, setForm] = useAdminDraftState(draftKey + 'form', brand)
+  const [tags, setTags] = useAdminDraftState(draftKey + 'tags', brand.category_tags.join('\n'))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
