@@ -20,11 +20,11 @@ export function CategoryLanding({ category, products, selected, onSelect }: { ca
       <span className="cooling-hero-caption">{category.name}</span>
     </section>
     {presentation && <section className="cooling-choices"><div className="container">
-      <div className="cooling-section-title"><p className="eyebrow">Explore the possibilities</p><h2>Find your kind of {category.shortName.toLowerCase()}.</h2></div>
+      <div className="cooling-section-title">{category.id === 'laundry' ? <h2>Washing machines</h2> : <><p className="eyebrow">Explore the possibilities</p><h2>Find your kind of {category.shortName.toLowerCase()}.</h2></>}</div>
       <div className="cooling-choice-grid">{presentation.choices.map((choice) => {
         const product = products.find((item) => choice.pattern.test(item.name))
         return <a key={choice.id} href="#cooling-collection" className={`cooling-choice ${selected === choice.id ? 'selected' : ''}`} onClick={() => onSelect(choice.id)}>
-          <div><h3>{choice.name}</h3><p>{choice.text}</p><span>Explore options <ArrowRight size={18}/></span></div>
+          <div><h3>{choice.name}</h3>{choice.text && <p>{choice.text}</p>}<span>Explore <ArrowRight size={18}/></span></div>
           {product ? <img src={product.image} alt={product.name} loading="lazy"/> : <div className="category-choice-placeholder"><Layers size={48} strokeWidth={1}/><span>Ask about {choice.name.toLowerCase()}</span></div>}
         </a>
       })}</div>

@@ -3,18 +3,14 @@ import type { Product } from './catalog'
 export type ProductTypeFilter = { id: string; label: string; matches: (product: Product) => boolean }
 const text = (product: Product) => `${product.name} ${product.specs.join(' ')}`.toLowerCase()
 const test = (pattern: RegExp) => (product: Product) => pattern.test(text(product))
-const washerDryer = test(/washer[ -]?dryer|wash\s*\/\s*.*dry/)
 const semiAutomatic = test(/semi[ -]?automatic|twin[ -]?tub/)
 const fan = test(/\bfan\b/)
 
 // Names/specifications are used so future owner-added products work too.
 export const categoryProductTypes: Record<string, ProductTypeFilter[]> = {
   laundry: [
-    { id: 'front-load', label: 'Automatic front-load', matches: p => test(/front[ -]?load/)(p) && !semiAutomatic(p) },
-    { id: 'top-load', label: 'Automatic top-load', matches: p => test(/top[ -]?load/)(p) && !semiAutomatic(p) },
-    { id: 'semi-automatic', label: 'Semi-automatic', matches: semiAutomatic },
-    { id: 'dryers', label: 'Dryers', matches: p => test(/\bdryer\b/)(p) && !washerDryer(p) },
-    { id: 'washer-dryers', label: 'Washer-dryers', matches: washerDryer },
+    { id: 'front-load', label: 'Front load', matches: p => test(/front[ -]?load/)(p) || p.slug === 'lg-rh90v9pv8n-heat-pump-dryer' },
+    { id: 'top-load', label: 'Top load', matches: p => test(/top[ -]?load/)(p) || semiAutomatic(p) },
   ],
   refrigeration: [
     { id: 'single-door', label: 'Single door', matches: test(/single[ -]?door/) },
