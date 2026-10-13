@@ -11,8 +11,16 @@ The admin product editor now asks for **Main category**, then **Subcategory**. C
 - Refrigeration: refrigerator layouts, mini fridges, dispenser models and standalone freezers.
 - Lighting: indoor; outdoor & decorative.
 - Electrical materials: wires & cables; switches & fittings.
-- Custom main categories without configured groups: General.
+- Custom main categories: create their groups in the Subcategories admin tab first.
 
 Public filtering honours the stored selection even for product names without category keywords. Layout/feature relationships are supported: semi-automatic belongs under Top load, washer-dryers/dryers under Front load, mini fridges under Single door, and top/bottom freezer under Two door. Water-dispenser specifications remain an additional filter feature.
 
-Adding brand-new custom subcategory definitions requires updating the shared taxonomy and database validator together; this release adds product assignment controls for the existing site groups, not a separate custom subcategory builder.
+## Managed subcategories
+
+Apply `007_managed_subcategories.sql` after 006. It seeds the existing groups without changing product assignments, then makes `product_subcategories` authoritative. The public website reads that table and listens for its realtime changes. An empty list stays empty; deleted definitions are not restored from shipped defaults.
+
+In admin, open **Subcategories → Add subcategory**, choose a main category first, enter a name and save. These saved groups immediately become choices in the product editor and filters on that category's website page. Display order controls the list order. Renaming keeps existing products assigned; deleting a group with assigned products is blocked by both the UI and database. Move those products first, including hidden ones. Subcategory keys and their parents cannot be changed in place.
+
+Only existing authorised catalogue managers can write these definitions. Migration 007 reuses team permissions if migration 003 has already been installed; the updated 003 also covers subcategories when team access is enabled afterwards. Neither migration automatically creates an administrator account.
+
+The large Front load / Top load laundry cards remain unchanged. New custom groups appear in the detailed collection filters without adding extra large loading cards.

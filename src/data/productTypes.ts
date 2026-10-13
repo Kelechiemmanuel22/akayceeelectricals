@@ -1,5 +1,5 @@
 import type { Product } from './catalog'
-import { getSubcategories } from './subcategories'
+import { getSubcategories, suggestSubcategory, type ManagedSubcategory } from './subcategories'
 
 export type ProductTypeFilter = { id: string; label: string; matches: (product: Product) => boolean }
 const text = (product: Product) => `${product.name} ${product.specs.join(' ')}`.toLowerCase()
@@ -38,15 +38,16 @@ export const categoryProductTypes: Record<string, ProductTypeFilter[]> = {
   ],
 }
 
-export function matchesProductType(product: Product, category: string, type: string) {
+export function matchesProductType(product: Product, category: string, type: string, definitions?: ManagedSubcategory[]) {
   if (type === 'all') return true
   if (product.subcategory) {
-    const assigned = getSubcategories(category).find(item => item.id === product.subcategory)
+    const assigned = getSubcategories(category, definitions).find(item => item.id === product.subcategory)
     if (assigned) {
       // The dispenser is an additional feature, not an exclusive door layout.
       if (category === 'refrigeration' && type === 'water-dispenser') return assigned.filters.includes(type) || test(/water(?:\s+and\s+ice)?\s+dispenser/)(product)
       return assigned.filters.includes(type)
     }
+    return false // Never reinterpret an explicit owner assignment using its name.
   }
-  return categoryProductTypes[category]?.find(filter => filter.id === type)?.matches(product) ?? true
+  return categoryProductTypes[category]?.find(filter => filter.id === type)?.matches(product) ?? (suggestSubcategory(category, product.name, product.specs) === type)
 }

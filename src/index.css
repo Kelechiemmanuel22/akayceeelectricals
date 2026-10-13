@@ -1097,6 +1097,10 @@ a { text-decoration: none; }
 .owner-pill { border: 1px solid rgba(11,17,26,.12); border-radius: 999px; padding: .45rem .7rem; color: rgba(11,17,26,.52); font-size: .68rem; font-weight: 800; }
 .owner-pill.active { border-color: rgba(20,115,65,.22); background: #eaf8ef; color: #12643b; }
 .owner-row-actions { display: flex; gap: .35rem; }
+.owner-subcategory-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.25rem; border: 1px solid #e4e7ef; border-radius: 1rem; background: white; }
+.owner-subcategory-row p { font-size: .85rem; color: #626878; margin: .4rem 0 0; }
+.owner-subcategory-row .owner-row-actions { flex-shrink: 0; }
+.owner-subcategory-row button:disabled { opacity: .35; cursor: not-allowed; }
 .owner-row-actions button, .owner-editor-header > button { display: grid; width: 38px; height: 38px; place-items: center; border-radius: .65rem; color: rgba(11,17,26,.65); }
 .owner-row-actions button:hover, .owner-editor-header > button:hover { background: #f1eee7; color: var(--color-ink); }
 .owner-loading { padding: 3rem; color: rgba(11,17,26,.55); text-align: center; }

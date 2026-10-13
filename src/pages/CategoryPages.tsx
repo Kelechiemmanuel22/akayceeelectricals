@@ -2,7 +2,8 @@ import { ArrowRight, Check, Search, X, Wind, Fan, MessageCircle } from 'lucide-r
 import { CategoryLanding, CategoryGuidance } from '../components/CategoryLanding'
 import { categoryPresentations } from '../data/categoryPresentation'
 import { categoryHeroes } from '../data/categoryHeroes'
-import { categoryProductTypes, matchesProductType } from '../data/productTypes'
+import { matchesProductType } from '../data/productTypes'
+import { getSubcategories } from '../data/subcategories'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard'
@@ -44,7 +45,7 @@ export function CategoriesPage() {
 
 export function CategoryPage() {
   const { categoryId = '' } = useParams()
-  const { categories, products, brands } = useCatalog()
+  const { categories, products, brands, subcategoryDefinitions } = useCatalog()
   const resolvedCategoryId = ({ 'air-conditioners': 'cooling', fans: 'cooling', televisions: 'entertainment', audio: 'entertainment' } as Record<string, string>)[categoryId.toLowerCase()] || categoryId
   const category = categories.find((item) => item.id.toLowerCase() === resolvedCategoryId.toLowerCase())
   const [query, setQuery] = useState('')
@@ -54,17 +55,18 @@ export function CategoryPage() {
 
   const categoryProducts = useMemo(() => products.filter((product) => product.category.toLowerCase() === resolvedCategoryId.toLowerCase()), [products, resolvedCategoryId])
   const categoryBrands = useMemo(() => Array.from(new Set(categoryProducts.map(product => product.brand))).sort().map(name => brands.find(item => item.name === name) || { name }), [brands, categoryProducts])
-  const typeFilters = categoryProductTypes[resolvedCategoryId]
+  const typeFilters = useMemo(() => getSubcategories(resolvedCategoryId, subcategoryDefinitions).map(item => ({ id: item.id, label: item.name })), [resolvedCategoryId, subcategoryDefinitions])
   const displayed = useMemo(() => {
     const search = query.trim().toLowerCase()
     return categoryProducts.filter((product) => {
       const matchesBrand = brand === 'all' || product.brand.toLowerCase() === brand.toLowerCase()
       const matchesSearch = !search || `${product.name} ${product.brand} ${product.description} ${product.specs.join(' ')}`.toLowerCase().includes(search)
-      const choice = categoryPresentations[resolvedCategoryId]?.choices.find((item) => item.id === coolingType)
-      const matchesType = coolingType === 'all' || (product.subcategory || typeFilters ? matchesProductType(product, resolvedCategoryId, coolingType) : !choice || choice.pattern.test(product.name))
+      const matchesType = matchesProductType(product, resolvedCategoryId, coolingType, subcategoryDefinitions)
       return matchesBrand && matchesSearch && matchesType
     })
-  }, [brand, categoryProducts, query, coolingType, resolvedCategoryId, typeFilters])
+  }, [brand, categoryProducts, query, coolingType, resolvedCategoryId, subcategoryDefinitions])
+
+  useEffect(() => { if (coolingType !== 'all' && !typeFilters.some(item => item.id === coolingType)) setCoolingType('all') }, [coolingType, typeFilters])
 
   useEffect(() => { setQuery(''); setBrand('all'); setCoolingType('all') }, [resolvedCategoryId])
 

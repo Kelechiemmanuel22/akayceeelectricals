@@ -6,7 +6,8 @@ import { AdminGrowthPanel } from '../components/AdminGrowthPanel'
 import { researchedProducts } from '../data/researchedProducts'
 import { AdminTeamPanel, AdminPasswordSetup } from '../components/AdminTeamPanel'
 import { parsePrice } from '../lib/pricing'
-import { canonicalCategory, getSubcategories, suggestSubcategory, validSubcategory } from '../data/subcategories'
+import { canonicalCategory, getSubcategories, suggestSubcategory, validSubcategory, mapSubcategory, type SubcategoryRow, type ManagedSubcategory } from '../data/subcategories'
+import { AdminSubcategoriesPanel } from '../components/AdminSubcategoriesPanel'
 
 type ProductRow = {
   subcategory_id?: string | null
@@ -179,7 +180,9 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [brands, setBrands] = useState<BrandRow[]>([])
   const [settings, setSettings] = useState<SettingsRow | null>(null)
-  const [section, setSection] = useState<'growth' | 'products' | 'categories' | 'brands' | 'settings' | 'team'>(isOwner ? 'growth' : 'products')
+  const [section, setSection] = useState<'growth' | 'products' | 'categories' | 'subcategories' | 'brands' | 'settings' | 'team'>(isOwner ? 'growth' : 'products')
+  const [managedSubcategories, setManagedSubcategories] = useState<SubcategoryRow[]>([])
+  const subcategoryDefinitions = useMemo(() => managedSubcategories.map(mapSubcategory), [managedSubcategories])
   const [editing, setEditing] = useState<ProductRow | null>(null)
   const [creating, setCreating] = useState(false)
   const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null)
@@ -196,13 +199,14 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   const load = useCallback(async () => {
     if (!supabase) return
     setBusy(true)
-    const [productResult, categoryResult, brandResult, settingsResult, priceResult, subcategoryResult] = await Promise.all([
+    const [productResult, categoryResult, brandResult, settingsResult, priceResult, subcategoryResult, definitionResult] = await Promise.all([
       supabase.from('products').select('*').order('sort_order'),
       supabase.from('categories').select('*').order('sort_order'),
       supabase.from('brands').select('*').order('sort_order'),
       supabase.from('site_settings').select('*').eq('id', 1).maybeSingle(),
       supabase.from('products').select('price').limit(1),
       supabase.from('products').select('subcategory_id').limit(1),
+      supabase.from('product_subcategories').select('*').order('sort_order').order('name'),
     ])
     if (productResult.error) setNotice(productResult.error.message)
     else setProducts((productResult.data || []) as ProductRow[])
@@ -212,7 +216,8 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
     else setBrands((brandResult.data || []) as BrandRow[])
     setSettings(settingsResult.data as SettingsRow | null)
     setPricesEnabled(!priceResult.error)
-    setSubcategoriesEnabled(!subcategoryResult.error)
+    setSubcategoriesEnabled(!subcategoryResult.error && !definitionResult.error)
+    setManagedSubcategories((definitionResult.data || []) as SubcategoryRow[])
     setBusy(false)
   }, [])
 
@@ -229,7 +234,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         if (!category) throw new Error(`Create the ${model.category} category before importing model examples.`)
         return {
           slug: model.slug, name: model.name, category_id: category.id, brand_name: model.brand,
-          ...(subcategoriesEnabled ? { subcategory_id: suggestSubcategory(model.category, model.name, model.specs) || null } : {}),
+          ...(subcategoriesEnabled ? { subcategory_id: validSubcategory(model.category, suggestSubcategory(model.category, model.name, model.specs), subcategoryDefinitions) ? suggestSubcategory(model.category, model.name, model.specs) : null } : {}),
           description: model.description, specs: [...model.specs, `Manufacturer reference: ${model.sourceUrl}`],
           image_url: model.image, featured: false, active: true, sort_order: 200 + index,
         }
@@ -321,6 +326,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
           {isOwner && <button className={section === 'growth' ? 'active' : ''} onClick={() => setSection('growth')}><BarChart3 size={17} /> Growth & analytics</button>}
           <button className={section === 'products' ? 'active' : ''} onClick={() => setSection('products')}><PackagePlus size={17} /> Products <span>{products.length}</span></button>
           <button className={section === 'categories' ? 'active' : ''} onClick={() => setSection('categories')}><FolderPlus size={17} /> Categories <span>{categories.length}</span></button>
+          <button className={section === 'subcategories' ? 'active' : ''} onClick={() => setSection('subcategories')}><FolderPlus size={17}/> Subcategories <span>{managedSubcategories.length}</span></button>
           <button className={section === 'brands' ? 'active' : ''} onClick={() => setSection('brands')}><Tags size={17} /> Brands <span>{brands.length}</span></button>
           <button className={section === 'settings' ? 'active' : ''} onClick={() => setSection('settings')}><ShieldCheck size={17} /> Business details</button>
           {isOwner && <button className={section === 'team' ? 'active' : ''} onClick={() => setSection('team')}><ShieldCheck size={17}/> Team & access</button>}
@@ -328,6 +334,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
 
         {section === 'growth' && isOwner && <AdminGrowthPanel />}
         {section === 'team' && isOwner && <AdminTeamPanel />}
+        {section === 'subcategories' && <AdminSubcategoriesPanel categories={categories} products={products} rows={managedSubcategories} enabled={subcategoriesEnabled} onSaved={load}/>}
 
         {section === 'products' && <>
           <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Products</p><h2>Published catalogue</h2><p>Add stock examples and assign each one to a category and brand.</p></div><button className="button button-dark" onClick={() => setCreating(true)}><PackagePlus size={17} /> Add product</button></div>
@@ -359,14 +366,14 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         {section === 'settings' && settings && <form className="owner-settings-card owner-settings-standalone" onSubmit={saveSettings}><div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Business details</p><h2>Public contact information</h2></div><button className="button button-dark">Save details</button></div><div className="owner-form-grid"><label>Phone<input value={settings.phone} onChange={(event) => setSettings({ ...settings, phone: event.target.value })} /></label><label>WhatsApp number<input value={settings.whatsapp} onChange={(event) => setSettings({ ...settings, whatsapp: event.target.value })} /></label><label>Email<input type="email" value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} /></label><label>Instagram URL<input value={settings.instagram_url} onChange={(event) => setSettings({ ...settings, instagram_url: event.target.value })} /></label><label className="owner-wide">Address<input value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} /></label></div></form>}
       </section>
 
-      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} subcategoriesEnabled={subcategoriesEnabled} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
+      {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} subcategoriesEnabled={subcategoriesEnabled} definitions={subcategoryDefinitions} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
       {(creatingCategory || editingCategory) && <CategoryEditor category={editingCategory || emptyCategory} isNew={creatingCategory} onClose={() => { setCreatingCategory(false); setEditingCategory(null) }} onSaved={async (message) => { setNotice(message); setCreatingCategory(false); setEditingCategory(null); await load() }} />}
       {(creatingBrand || editingBrand) && <BrandEditor brand={editingBrand || emptyBrand} isNew={creatingBrand} onClose={() => { setCreatingBrand(false); setEditingBrand(null) }} onSaved={async (message) => { setNotice(message); setCreatingBrand(false); setEditingBrand(null); await load() }} />}
     </main>
   )
 }
 
-function ProductEditor({ product, categories, brands, pricesEnabled, subcategoriesEnabled, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; pricesEnabled: boolean; subcategoriesEnabled: boolean; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
+function ProductEditor({ product, categories, brands, pricesEnabled, subcategoriesEnabled, definitions, onClose, onSaved }: { product: ProductRow | Omit<ProductRow, 'id'>; categories: CategoryRow[]; brands: BrandRow[]; pricesEnabled: boolean; subcategoriesEnabled: boolean; definitions: ManagedSubcategory[]; onClose: () => void; onSaved: (message: string) => Promise<void> }) {
   const [form, setForm] = useState(product)
   const [specText, setSpecText] = useState(product.specs.join('\n'))
   const [priceText, setPriceText] = useState(product.price == null ? '' : String(product.price))
@@ -375,7 +382,7 @@ function ProductEditor({ product, categories, brands, pricesEnabled, subcategori
   const [subcategory, setSubcategory] = useState(product.subcategory_id || suggestSubcategory(product.category_id, product.name, product.specs))
   const mainCategory = canonicalCategory(form.category_id)
   const categoryOptions = categories.filter((item, index, all) => all.findIndex(other => canonicalCategory(other.id) === canonicalCategory(item.id)) === index)
-  const subcategoryOptions = getSubcategories(form.category_id)
+  const subcategoryOptions = getSubcategories(form.category_id, definitions)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -391,7 +398,7 @@ function ProductEditor({ product, categories, brands, pricesEnabled, subcategori
   const save = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!supabase) return
-    if (subcategoriesEnabled && !validSubcategory(form.category_id, subcategory)) { setError('Choose a subcategory under the selected main category.'); return }
+    if (subcategoriesEnabled && !validSubcategory(form.category_id, subcategory, definitions)) { setError('Choose a subcategory under the selected main category. Add one in Subcategories if this category has none.'); return }
     let price: number | null
     try { price = parsePrice(priceText) } catch (error) { setError(error instanceof Error ? error.message : 'Invalid price.'); return }
     setSaving(true)

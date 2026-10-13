@@ -17,7 +17,9 @@ revoke insert, update, delete on public.profiles from anon, authenticated;
 drop policy if exists "Owners manage profiles" on public.profiles;
 
 do $$ declare item text; begin
-  foreach item in array array['products','categories','brands','site_settings'] loop
+  foreach item in array array['products','categories','brands','site_settings','product_subcategories'] loop
+    -- Also covers installations that enable team access after subcategories.
+    if to_regclass('public.' || item) is null then continue; end if;
     execute format('drop policy if exists %I on public.%I', 'Owners manage ' || case when item = 'site_settings' then 'site settings' else item end, item);
     execute format('drop policy if exists %I on public.%I', 'Approved admins manage content', item);
     execute format('create policy %I on public.%I for all to authenticated using (public.is_catalog_admin()) with check (public.is_catalog_admin())', 'Approved admins manage content', item);

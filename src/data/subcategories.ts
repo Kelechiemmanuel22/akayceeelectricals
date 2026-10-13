@@ -1,4 +1,7 @@
 export type Subcategory = { id: string; name: string; filters: string[] }
+export type ManagedSubcategory = Subcategory & { category: string; sortOrder?: number }
+export type SubcategoryRow = { category_id: string; id: string; name: string; filter_ids: string[]; sort_order: number }
+export const mapSubcategory = (row: SubcategoryRow): ManagedSubcategory => ({ category: row.category_id, id: row.id, name: row.name, filters: row.filter_ids, sortOrder: row.sort_order })
 const option = (id: string, name: string, filters = [id]): Subcategory => ({ id, name, filters })
 
 export function canonicalCategory(id: string) {
@@ -38,12 +41,17 @@ export const subcategories: Record<string, Subcategory[]> = {
   'electrical-materials': [option('cables', 'Wires & cables'), option('fittings', 'Switches & fittings')],
 }
 
-export function getSubcategories(category: string): Subcategory[] {
+export function defaultSubcategoryDefinitions(): ManagedSubcategory[] {
+  return Object.entries(subcategories).flatMap(([category, items]) => items.map((item, index) => ({ ...item, category, sortOrder: index })))
+}
+
+export function getSubcategories(category: string, definitions?: ManagedSubcategory[]): Subcategory[] {
+  if (definitions) return definitions.filter(item => canonicalCategory(item.category) === canonicalCategory(category))
   return subcategories[canonicalCategory(category)] || [option('general', 'General')]
 }
 
-export function validSubcategory(category: string, id: string) {
-  return getSubcategories(category).some(item => item.id === id)
+export function validSubcategory(category: string, id: string, definitions?: ManagedSubcategory[]) {
+  return getSubcategories(category, definitions).some(item => item.id === id)
 }
 
 // Used only to suggest/backfill older products. Owner selection is authoritative.

@@ -9,6 +9,7 @@ import {
 } from '../data/catalog'
 import { fetchRemoteCatalogue } from '../lib/supabaseCatalog'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { defaultSubcategoryDefinitions, type ManagedSubcategory } from '../data/subcategories'
 
 // Bump this namespace whenever the shipped demo catalogue changes so an old
 // browser-only admin draft cannot override the public release data.
@@ -33,6 +34,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 }
 
 type CatalogContextType = {
+  subcategoryDefinitions: ManagedSubcategory[]
   isLoading: boolean
   // Products
   products: Product[]
@@ -96,6 +98,7 @@ const normalizeCategories = (items: Category[]) => {
 }
 
 export function CatalogProvider({ children }: { children: React.ReactNode }) {
+  const [subcategoryDefinitions, setSubcategoryDefinitions] = useState(defaultSubcategoryDefinitions)
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
   // 1. Products State
   const [products, setProducts] = useState<Product[]>(() => {
@@ -176,6 +179,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
         setProducts(normalizeProducts(remote.products))
         setCategories(normalizeCategories(remote.categories))
         setBrands(remote.brands)
+        if (remote.subcategoryDefinitions) setSubcategoryDefinitions(remote.subcategoryDefinitions)
         if (remote.settings) setSiteSettings((current) => ({ ...current, ...remote.settings }))
       } catch (error) {
         console.error('Unable to load the Supabase catalogue. Using the local catalogue fallback.', error)
@@ -191,6 +195,7 @@ export function CatalogProvider({ children }: { children: React.ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, refreshCatalogue)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, refreshCatalogue)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'brands' }, refreshCatalogue)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'product_subcategories' }, refreshCatalogue)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, refreshCatalogue)
       .subscribe()
 
@@ -642,6 +647,7 @@ export const products: Product[] = ${JSON.stringify(products, null, 2)};
     <CatalogContext.Provider
       value={{
         isLoading,
+        subcategoryDefinitions,
         // Products
         products,
         addProduct,
