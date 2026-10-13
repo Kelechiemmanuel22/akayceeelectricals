@@ -22,13 +22,14 @@ for (const [category, filters] of Object.entries(categoryProductTypes)) {
     assert.ok(models.some(p => p.category === category && matchesProductType(p, category, filter.id)), `${category}/${filter.id} has no example`)
   }
 }
-assert.deepEqual(categoryProductTypes.laundry.map(filter => filter.id), ['front-load', 'top-load'])
+assert.deepEqual(categoryProductTypes.laundry.map(filter => filter.id), ['front-load', 'top-load', 'semi-automatic', 'dryers', 'washer-dryers'])
 const laundry = models.filter(p => p.category === 'laundry')
 assert.equal(laundry.filter(p => matchesProductType(p, 'laundry', 'front-load')).length, 3)
 assert.equal(laundry.filter(p => matchesProductType(p, 'laundry', 'top-load')).length, 2)
 for (const product of laundry) {
-  assert.equal(categoryProductTypes.laundry.filter(filter => filter.matches(product)).length, 1, `${product.slug} must belong to exactly one loading group`)
+  assert.equal(categoryProductTypes.laundry.slice(0, 2).filter(filter => filter.matches(product)).length, 1, `${product.slug} must belong to exactly one loading group`)
 }
+for (const type of ['semi-automatic', 'dryers', 'washer-dryers']) assert.equal(laundry.filter(p => matchesProductType(p, 'laundry', type)).length, 1)
 assert.equal(matchesProductType({ name: 'Non-inverter split AC', specs: [] }, 'cooling', 'inverter-split'), false)
 assert.equal(matchesProductType({ name: 'Floor-standing fan', specs: [] }, 'cooling', 'floor-standing'), false)
-console.log('Passed: 14 models, image files, manufacturer sources, two complete laundry groups and AC exclusions.')
+console.log('Passed: 14 models, two loading groups, restored laundry subtype filters and AC exclusions.')
