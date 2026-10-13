@@ -2,6 +2,8 @@ import { ArrowRight, Check, Search, X, Wind, Fan, MessageCircle } from 'lucide-r
 import { CategoryLanding, CategoryGuidance } from '../components/CategoryLanding'
 import { categoryPresentations } from '../data/categoryPresentation'
 import { categoryHeroes } from '../data/categoryHeroes'
+import { categoryGroups } from '../data/categoryGroups'
+import { CategoryGroupCards } from '../components/CategoryGroupCards'
 import { matchesProductType } from '../data/productTypes'
 import { getSubcategories } from '../data/subcategories'
 import { useEffect, useMemo, useState } from 'react'
@@ -56,6 +58,7 @@ export function CategoryPage() {
   const categoryProducts = useMemo(() => products.filter((product) => product.category.toLowerCase() === resolvedCategoryId.toLowerCase()), [products, resolvedCategoryId])
   const categoryBrands = useMemo(() => Array.from(new Set(categoryProducts.map(product => product.brand))).sort().map(name => brands.find(item => item.name === name) || { name }), [brands, categoryProducts])
   const typeFilters = useMemo(() => getSubcategories(resolvedCategoryId, subcategoryDefinitions).map(item => ({ id: item.id, label: item.name })), [resolvedCategoryId, subcategoryDefinitions])
+  const groups = useMemo(() => categoryGroups(resolvedCategoryId, subcategoryDefinitions), [resolvedCategoryId, subcategoryDefinitions])
   const displayed = useMemo(() => {
     const search = query.trim().toLowerCase()
     return categoryProducts.filter((product) => {
@@ -66,7 +69,7 @@ export function CategoryPage() {
     })
   }, [brand, categoryProducts, query, coolingType, resolvedCategoryId, subcategoryDefinitions])
 
-  useEffect(() => { if (coolingType !== 'all' && !typeFilters.some(item => item.id === coolingType)) setCoolingType('all') }, [coolingType, typeFilters])
+  useEffect(() => { if (coolingType !== 'all' && !typeFilters.some(item => item.id === coolingType) && !groups.some(item => item.id === coolingType)) setCoolingType('all') }, [coolingType, typeFilters, groups])
 
   useEffect(() => { setQuery(''); setBrand('all'); setCoolingType('all') }, [resolvedCategoryId])
 
@@ -94,9 +97,7 @@ export function CategoryPage() {
       <section className="cooling-choices">
         <div className="container">
           <div className="cooling-section-title"><p className="eyebrow">Find your comfort</p><h2>How do you like to stay cool?</h2></div>
-          <div className="cooling-choice-grid">
-            {[{id:'air-conditioners', name:'Air conditioners', text:'Make every room your comfort zone.', image:'/assets/products/midea-2hp-ac-clean.png', label:'Explore air conditioners'}, {id:'fans', name:'Fans', text:'A little breeze. A big difference.', image:'/assets/products/royal-standing-fan.jpg', label:'Explore fans'}].map((item) => <a key={item.id} href="#cooling-collection" className={`cooling-choice ${coolingType === item.id ? 'selected' : ''}`} onClick={() => { setCoolingType(item.id); setBrand('all'); setQuery('') }}><div><h3>{item.name}</h3><p>{item.text}</p><span>{item.label} <ArrowRight size={18}/></span></div><img src={item.image} alt={item.name} loading="lazy"/></a>)}
-          </div>
+          <CategoryGroupCards category={category.id} products={categoryProducts} definitions={subcategoryDefinitions} selected={coolingType} onSelect={id => { setCoolingType(id); setBrand('all'); setQuery('') }}/>
         </div>
       </section>
     </> : <CategoryLanding category={category} products={categoryProducts} selected={coolingType} onSelect={(id) => { setCoolingType(id); setBrand('all'); setQuery('') }}/ >}

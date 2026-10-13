@@ -11,6 +11,7 @@ export type Category = {
 }
 
 export type Product = {
+  createdAt?: string
   slug: string
   name: string
   category: CategoryId

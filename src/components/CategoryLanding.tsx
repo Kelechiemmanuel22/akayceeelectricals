@@ -3,13 +3,15 @@ import type { Category, Product } from '../data/catalog'
 import { categoryPresentations } from '../data/categoryPresentation'
 import { categoryHeroes } from '../data/categoryHeroes'
 import { WhatsAppLink } from './WhatsAppLink'
-import { matchesProductType } from '../data/productTypes'
+import { categoryGroups } from '../data/categoryGroups'
+import { CategoryGroupCards } from './CategoryGroupCards'
 import { useCatalog } from '../context/CatalogContext'
 
 export function CategoryLanding({ category, products, selected, onSelect }: { category: Category; products: Product[]; selected: string; onSelect: (id: string) => void }) {
   const { subcategoryDefinitions } = useCatalog()
   const presentation = categoryPresentations[category.id]
   const hero = categoryHeroes[category.id]
+  const groups = categoryGroups(category.id, subcategoryDefinitions)
   return <>
     <section className={`cooling-hero category-range-hero category-photo-hero category-photo-${category.id}`}>
       <img className={`category-photo-image ${hero?.mirror ? 'category-photo-mirrored' : ''}`} src={hero?.image || category.image} alt={hero?.alt || category.name} style={{ objectPosition: hero?.position || 'center' }} fetchPriority="high"/>
@@ -22,15 +24,9 @@ export function CategoryLanding({ category, products, selected, onSelect }: { ca
       </div>
       <span className="cooling-hero-caption">{category.name}</span>
     </section>
-    {presentation && <section className="cooling-choices"><div className="container">
+    {groups.length > 0 && <section className="cooling-choices"><div className="container">
       <div className="cooling-section-title">{category.id === 'laundry' ? <h2>Washing machines</h2> : <><p className="eyebrow">Explore the possibilities</p><h2>Find your kind of {category.shortName.toLowerCase()}.</h2></>}</div>
-      <div className="cooling-choice-grid">{presentation.choices.map((choice) => {
-        const product = products.find((item) => matchesProductType(item, category.id, choice.id, subcategoryDefinitions))
-        return <a key={choice.id} href="#cooling-collection" className={`cooling-choice ${selected === choice.id ? 'selected' : ''}`} onClick={() => onSelect(choice.id)}>
-          <div><h3>{choice.name}</h3>{choice.text && <p>{choice.text}</p>}<span>Explore <ArrowRight size={18}/></span></div>
-          {product ? <img src={product.image} alt={product.name} loading="lazy"/> : <div className="category-choice-placeholder"><Layers size={48} strokeWidth={1}/><span>Ask about {choice.name.toLowerCase()}</span></div>}
-        </a>
-      })}</div>
+      <CategoryGroupCards category={category.id} products={products} definitions={subcategoryDefinitions} selected={selected} onSelect={onSelect}/>
     </div></section>}
   </>
 }

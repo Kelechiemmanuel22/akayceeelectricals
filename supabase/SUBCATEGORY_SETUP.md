@@ -24,3 +24,11 @@ In admin, open **Subcategories → Add subcategory**, choose a main category fir
 Only existing authorised catalogue managers can write these definitions. Migration 007 reuses team permissions if migration 003 has already been installed; the updated 003 also covers subcategories when team access is enabled afterwards. Neither migration automatically creates an administrator account.
 
 The large Front load / Top load laundry cards remain unchanged. New custom groups appear in the detailed collection filters without adding extra large loading cards.
+
+## Automatic group-card images
+
+Every established category keeps two broad cards (for example Cooling: Air conditioners / Fans; Laundry: Front load / Top load). No separate subcategory image field is needed. Both cards use the oldest published matching product's image, based on `products.created_at`, independently of product display order. Products created in the same timestamp use a stable slug tie-break; legacy demo rows without timestamps retain their listed order. Updating that product's image updates the card through the existing catalogue refresh/realtime flow.
+
+Empty groups, first products without image URLs and failed image loads show a neutral placeholder rather than an unrelated photo. Hiding/deleting the first product lets the next published matching product provide the image. New departments show up to two saved groups in subcategory display order; all their additional groups remain available as collection filters. Known departments preserve their broad group pairs while more detailed product types remain filters underneath.
+
+Run `node scripts/check-category-groups.mjs` alongside the existing subcategory checks.

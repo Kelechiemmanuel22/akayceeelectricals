@@ -22,6 +22,7 @@ type BrandRow = {
 }
 
 type ProductRow = {
+  created_at?: string
   subcategory_id?: string | null
   price?: number | null
   price_is_estimate?: boolean
@@ -87,6 +88,7 @@ export async function fetchRemoteCatalogue(): Promise<RemoteCatalogue | null> {
   }))
 
   const products = ((productResult.data || []) as ProductRow[]).map((row) => ({
+    createdAt: row.created_at,
     slug: row.slug,
     name: row.name,
     category: row.category_id === 'audio' ? 'televisions' : row.category_id,
