@@ -912,7 +912,7 @@ a { text-decoration: none; }
 .product-card-description { display: -webkit-box; margin-top: .7rem; overflow: hidden; color: rgba(11,17,26,.62); font-size: .84rem; line-height: 1.7; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .product-card-specs { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1rem; }
 .product-card-specs span { border-radius: .45rem; background: var(--color-sand); padding: .35rem .55rem; color: rgba(11,17,26,.7); font-size: .68rem; font-weight: 600; }
-.product-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid rgba(11,17,26,.08); }
+.product-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(11,17,26,.08); }
 .quote-button { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-height: 42px; border: 1px solid rgba(11,17,26,.16); border-radius: 999px; color: var(--color-ink); font-size: .74rem; font-weight: 800; }
 .quote-button:hover, .quote-button-active { border-color: var(--color-gold-dark); background: rgba(229,171,25,.1); }
 .product-whatsapp { width: 100%; min-height: 42px; padding-inline: .7rem; }
