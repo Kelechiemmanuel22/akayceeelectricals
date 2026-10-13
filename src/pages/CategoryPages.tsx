@@ -6,6 +6,7 @@ import { categoryProductTypes, matchesProductType } from '../data/productTypes'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard'
+import { BrandFilter } from '../components/BrandFilter'
 import { WhatsAppLink } from '../components/WhatsAppLink'
 import { useCatalog } from '../context/CatalogContext'
 import { setPageMeta } from '../lib/site'
@@ -105,7 +106,7 @@ export function CategoryPage() {
           <label><Search size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${category.shortName.toLowerCase()}`} aria-label={`Search ${category.name}`}/>{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={15}/></button>}</label>
         </div>
         <div className="cooling-product-tabs collection-type-tabs" aria-label={`${category.name} product type`}><button type="button" className={coolingType === 'all' ? 'active' : ''} aria-pressed={coolingType === 'all'} onClick={() => setCoolingType('all')}>All products</button>{(typeFilters || categoryPresentations[category.id]?.choices.map(item => ({ id:item.id, label:item.name })) || []).map(item => <button key={item.id} type="button" aria-pressed={coolingType === item.id} className={coolingType === item.id ? 'active' : ''} onClick={() => setCoolingType(item.id)}>{item.label}</button>)}<span>{displayed.length} {displayed.length === 1 ? 'item' : 'items'}</span></div>
-        <label className="collection-brand-select">Filter by brand<select value={brand} onChange={(event) => setBrand(event.target.value)}><option value="all">All brands</option>{categoryBrands.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
+        <BrandFilter value={brand} brands={categoryBrands.map(item => item.name)} onChange={setBrand}/>
         <div className="catalogue-status"><Check size={15}/><span>Current pricing and availability are confirmed when you enquire.</span></div>
         {displayed.length ? <div className="catalogue-grid">{displayed.map((product) => <ProductCard product={product} showPrice key={product.slug}/>)}</div> : <div className="catalogue-empty"><p className="eyebrow text-gold-dark">No matching items</p><h3>Let’s find your right fit.</h3><p>Try another filter or ask the store about {category.name.toLowerCase()}.</p><div className="catalogue-empty-actions"><button type="button" className="button button-dark" onClick={() => { setQuery(''); setBrand('all'); setCoolingType('all') }}>Reset filters</button><WhatsAppLink subject={category.name}>Ask on WhatsApp</WhatsAppLink></div></div>}
       </div>

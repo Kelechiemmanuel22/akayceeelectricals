@@ -2,6 +2,7 @@ import { Check, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ProductCard } from '../components/ProductCard'
+import { BrandFilter } from '../components/BrandFilter'
 import { WhatsAppLink } from '../components/WhatsAppLink'
 import { useCatalog } from '../context/CatalogContext'
 import { setPageMeta } from '../lib/site'
@@ -91,7 +92,7 @@ export function ProductsPage() {
           </div>
 
           <div className="catalogue-toolbar">
-            <label className="collection-brand-select">Brand<select value={brand} onChange={(event) => updateFilter('brand', event.target.value)}><option value="all">All brands</option>{brands.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
+            <BrandFilter value={brand} brands={brands.map(item => item.name)} onChange={value => updateFilter('brand', value)}/>
             <label className="catalogue-search">
               <Search size={18} />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products, categories or brands" aria-label="Search products" />
