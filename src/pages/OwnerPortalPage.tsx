@@ -8,6 +8,10 @@ import { AdminTeamPanel, AdminPasswordSetup } from '../components/AdminTeamPanel
 import { parsePrice } from '../lib/pricing'
 import { canonicalCategory, getSubcategories, suggestSubcategory, validSubcategory, mapSubcategory, type SubcategoryRow, type ManagedSubcategory } from '../data/subcategories'
 import { AdminSubcategoriesPanel } from '../components/AdminSubcategoriesPanel'
+import { AdminWorkspace, type AdminSection, type WorkspaceSearchItem } from '../components/AdminWorkspace'
+import { AdminOverview } from '../components/AdminOverview'
+import { AdminMediaPanel, type AdminMediaItem } from '../components/AdminMediaPanel'
+import '../admin.css'
 
 type ProductRow = {
   subcategory_id?: string | null
@@ -180,7 +184,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   const [categories, setCategories] = useState<CategoryRow[]>([])
   const [brands, setBrands] = useState<BrandRow[]>([])
   const [settings, setSettings] = useState<SettingsRow | null>(null)
-  const [section, setSection] = useState<'growth' | 'products' | 'categories' | 'subcategories' | 'brands' | 'settings' | 'team'>(isOwner ? 'growth' : 'products')
+  const [section, setSection] = useState<AdminSection>('overview')
   const [managedSubcategories, setManagedSubcategories] = useState<SubcategoryRow[]>([])
   const subcategoryDefinitions = useMemo(() => managedSubcategories.map(mapSubcategory), [managedSubcategories])
   const [editing, setEditing] = useState<ProductRow | null>(null)
@@ -313,31 +317,31 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
     setNotice(error ? error.message : 'Business details saved and published.')
   }
 
+  const searchItems: WorkspaceSearchItem[] = [
+    ...products.map(item => ({ id: `product-${item.id}`, label: item.name, kind: 'Product', section: 'products' as const, onSelect: () => setEditing(item) })),
+    ...categories.map(item => ({ id: `category-${item.id}`, label: item.name, kind: 'Category', section: 'categories' as const, onSelect: () => setEditingCategory(item) })),
+    ...managedSubcategories.map(item => ({ id: `subcategory-${item.category_id}-${item.id}`, label: item.name, kind: 'Subcategory', section: 'subcategories' as const })),
+    ...brands.map(item => ({ id: `brand-${item.id}`, label: item.name, kind: 'Brand', section: 'brands' as const, onSelect: () => setEditingBrand(item) })),
+  ]
+  const mediaItems: AdminMediaItem[] = [
+    ...products.map(item => ({ id: `product-${item.id}`, name: item.name, kind: 'Product' as const, image: item.image_url, onEdit: () => setEditing(item) })),
+    ...categories.map(item => ({ id: `category-${item.id}`, name: item.name, kind: 'Category' as const, image: item.image_url, onEdit: () => setEditingCategory(item) })),
+    ...brands.map(item => ({ id: `brand-${item.id}`, name: item.name, kind: 'Brand' as const, image: item.logo_url, onEdit: () => setEditingBrand(item) })),
+  ]
+  const addProduct = () => { if (busy) { setNotice('Please wait for the catalogue to finish loading.'); return } setCreating(true) }
+
   return (
-    <main className="owner-dashboard-shell">
-      <header className="owner-dashboard-header">
-        <div><p className="eyebrow text-gold-light">A Kaycee owner portal</p><h1>Catalogue control room</h1><p>Signed in as {session.user.email}</p></div>
-        <div className="owner-header-actions"><a className="button button-light" href="/" target="_blank" rel="noreferrer">View website</a><button className="button button-ghost" onClick={() => void supabase?.auth.signOut()}><LogOut size={16} /> Sign out</button></div>
-      </header>
-
-      <section className="owner-dashboard-content">
+    <AdminWorkspace section={section} onNavigate={setSection} isOwner={isOwner} email={session.user.email} logo={settings?.logo_url} searchItems={searchItems} onSignOut={() => void supabase?.auth.signOut()}>
+      <div className="admin-section-content">
         {notice && <div className="owner-notice"><Check size={17} />{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message"><X size={15} /></button></div>}
-        <nav className="owner-admin-tabs" aria-label="Admin sections">
-          {isOwner && <button className={section === 'growth' ? 'active' : ''} onClick={() => setSection('growth')}><BarChart3 size={17} /> Growth & analytics</button>}
-          <button className={section === 'products' ? 'active' : ''} onClick={() => setSection('products')}><PackagePlus size={17} /> Products <span>{products.length}</span></button>
-          <button className={section === 'categories' ? 'active' : ''} onClick={() => setSection('categories')}><FolderPlus size={17} /> Categories <span>{categories.length}</span></button>
-          <button className={section === 'subcategories' ? 'active' : ''} onClick={() => setSection('subcategories')}><FolderPlus size={17}/> Subcategories <span>{managedSubcategories.length}</span></button>
-          <button className={section === 'brands' ? 'active' : ''} onClick={() => setSection('brands')}><Tags size={17} /> Brands <span>{brands.length}</span></button>
-          <button className={section === 'settings' ? 'active' : ''} onClick={() => setSection('settings')}><ShieldCheck size={17} /> Business details</button>
-          {isOwner && <button className={section === 'team' ? 'active' : ''} onClick={() => setSection('team')}><ShieldCheck size={17}/> Team & access</button>}
-        </nav>
-
-        {section === 'growth' && isOwner && <AdminGrowthPanel />}
+        {section === 'overview' && <AdminOverview products={products} categories={categories} brandCount={brands.length} subcategoryCount={managedSubcategories.length} isOwner={isOwner} busy={busy} onNavigate={setSection} onAddProduct={addProduct} onEditProduct={id => setEditing(products.find(item => item.id === id) || null)}/>}
+        {(['analytics', 'requests', 'newsletter'] as AdminSection[]).includes(section) && isOwner && <AdminGrowthPanel key={section} initialTab={section as 'analytics' | 'requests' | 'newsletter'} hideTabs/>}
+        {section === 'media' && <AdminMediaPanel items={mediaItems}/>}
         {section === 'team' && isOwner && <AdminTeamPanel />}
         {section === 'subcategories' && <AdminSubcategoriesPanel categories={categories} products={products} rows={managedSubcategories} enabled={subcategoriesEnabled} onSaved={load}/>}
 
         {section === 'products' && <>
-          <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Products</p><h2>Published catalogue</h2><p>Add stock examples and assign each one to a category and brand.</p></div><button className="button button-dark" onClick={() => setCreating(true)}><PackagePlus size={17} /> Add product</button></div>
+          <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Products</p><h1>Published catalogue</h1><p>Add stock examples and assign each one to a category and brand.</p></div><button className="button button-dark" onClick={() => setCreating(true)}><PackagePlus size={17} /> Add product</button></div>
           <input className="owner-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products or brands" aria-label="Search admin products" />
           <div className="owner-model-import"><div><strong>Researched appliance models</strong><p>Add 14 manufacturer-sourced examples for laundry, refrigerators and air conditioners. Existing entries are skipped. These are examples, not verified stock.</p></div><button type="button" className="button button-dark" disabled={busy || importingModels} onClick={() => void importModelExamples()}>{importingModels ? <Loader2 className="animate-spin" size={17}/> : <PackagePlus size={17}/>} {importingModels ? 'Importing…' : 'Import model examples'}</button></div>
           <div className="owner-product-table">
@@ -354,22 +358,22 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         </>}
 
         {section === 'categories' && <>
-          <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Catalogue structure</p><h2>Product categories</h2><p>Create departments such as Phones & Tablets, Solar Systems, or Small Appliances.</p></div><button className="button button-dark" onClick={() => setCreatingCategory(true)}><FolderPlus size={17} /> Add category</button></div>
+          <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Catalogue structure</p><h1>Product categories</h1><p>Create departments such as Phones & Tablets, Solar Systems, or Small Appliances.</p></div><button className="button button-dark" onClick={() => setCreatingCategory(true)}><FolderPlus size={17} /> Add category</button></div>
           <div className="owner-management-grid">{categories.map((category) => <article className="owner-management-card" key={category.id}><img src={category.image_url} alt="" /><div><p className="owner-card-kicker">{category.short_name}</p><h3>{category.name}</h3><p>{category.description}</p><small>{products.filter((product) => product.category_id === category.id).length} products</small></div><div className="owner-card-footer"><button className={category.active ? 'owner-pill active' : 'owner-pill'} onClick={() => void toggleCategory(category)}>{category.active ? 'Visible' : 'Hidden'}</button><div className="owner-row-actions"><button onClick={() => setEditingCategory(category)} aria-label={`Edit ${category.name}`}><Pencil size={16} /></button><button onClick={() => void deleteCategory(category)} aria-label={`Delete ${category.name}`}><Trash2 size={16} /></button></div></div></article>)}</div>
         </>}
 
         {section === 'brands' && <>
-          <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Suppliers</p><h2>Brands you stock</h2><p>Add or remove brands and upload the logos customers see on the website.</p></div><button className="button button-dark" onClick={() => setCreatingBrand(true)}><Tags size={17} /> Add brand</button></div>
+          <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Suppliers</p><h1>Brands you stock</h1><p>Add or remove brands and upload the logos customers see on the website.</p></div><button className="button button-dark" onClick={() => setCreatingBrand(true)}><Tags size={17} /> Add brand</button></div>
           <div className="owner-management-grid owner-brand-admin-grid">{brands.map((brand) => <article className="owner-management-card" key={brand.id}><div className="owner-brand-logo"><img src={brand.logo_url} alt={`${brand.name} logo`} /></div><div><h3>{brand.name}</h3><p>{brand.tagline}</p><small>{products.filter((product) => product.brand_name === brand.name).length} products</small></div><div className="owner-card-footer"><button className={brand.active ? 'owner-pill active' : 'owner-pill'} onClick={() => void toggleBrand(brand)}>{brand.active ? 'Visible' : 'Hidden'}</button><div className="owner-row-actions"><button onClick={() => setEditingBrand(brand)} aria-label={`Edit ${brand.name}`}><Pencil size={16} /></button><button onClick={() => void deleteBrand(brand)} aria-label={`Delete ${brand.name}`}><Trash2 size={16} /></button></div></div></article>)}</div>
         </>}
 
-        {section === 'settings' && settings && <form className="owner-settings-card owner-settings-standalone" onSubmit={saveSettings}><div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Business details</p><h2>Public contact information</h2></div><button className="button button-dark">Save details</button></div><div className="owner-form-grid"><label>Phone<input value={settings.phone} onChange={(event) => setSettings({ ...settings, phone: event.target.value })} /></label><label>WhatsApp number<input value={settings.whatsapp} onChange={(event) => setSettings({ ...settings, whatsapp: event.target.value })} /></label><label>Email<input type="email" value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} /></label><label>Instagram URL<input value={settings.instagram_url} onChange={(event) => setSettings({ ...settings, instagram_url: event.target.value })} /></label><label className="owner-wide">Address<input value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} /></label></div></form>}
-      </section>
+        {section === 'settings' && settings && <form className="owner-settings-card owner-settings-standalone" onSubmit={saveSettings}><div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Business details</p><h1>Public contact information</h1></div><button className="button button-dark">Save details</button></div><div className="owner-form-grid"><label>Phone<input value={settings.phone} onChange={(event) => setSettings({ ...settings, phone: event.target.value })} /></label><label>WhatsApp number<input value={settings.whatsapp} onChange={(event) => setSettings({ ...settings, whatsapp: event.target.value })} /></label><label>Email<input type="email" value={settings.email} onChange={(event) => setSettings({ ...settings, email: event.target.value })} /></label><label>Instagram URL<input value={settings.instagram_url} onChange={(event) => setSettings({ ...settings, instagram_url: event.target.value })} /></label><label className="owner-wide">Address<input value={settings.address} onChange={(event) => setSettings({ ...settings, address: event.target.value })} /></label></div></form>}
+      </div>
 
       {(creating || editing) && <ProductEditor product={editing || emptyProduct} categories={categories} brands={brands} pricesEnabled={pricesEnabled} subcategoriesEnabled={subcategoriesEnabled} definitions={subcategoryDefinitions} onClose={() => { setCreating(false); setEditing(null) }} onSaved={async (message) => { setNotice(message); setCreating(false); setEditing(null); await load() }} />}
       {(creatingCategory || editingCategory) && <CategoryEditor category={editingCategory || emptyCategory} isNew={creatingCategory} onClose={() => { setCreatingCategory(false); setEditingCategory(null) }} onSaved={async (message) => { setNotice(message); setCreatingCategory(false); setEditingCategory(null); await load() }} />}
       {(creatingBrand || editingBrand) && <BrandEditor brand={editingBrand || emptyBrand} isNew={creatingBrand} onClose={() => { setCreatingBrand(false); setEditingBrand(null) }} onSaved={async (message) => { setNotice(message); setCreatingBrand(false); setEditingBrand(null); await load() }} />}
-    </main>
+    </AdminWorkspace>
   )
 }
 

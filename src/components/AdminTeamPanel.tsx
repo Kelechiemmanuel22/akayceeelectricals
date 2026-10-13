@@ -39,7 +39,7 @@ export function AdminTeamPanel() {
   }
 
   return <div className="owner-team-panel">
-    <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Owner only</p><h2>Your administrator team</h2><p>Only you can grant access. Each administrator signs in with their own account.</p></div><ShieldCheck size={30}/></div>
+    <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Owner only</p><h1>Your administrator team</h1><p>Only you can grant access. Each administrator signs in with their own account.</p></div><ShieldCheck size={30}/></div>
     <div className="owner-team-permissions"><strong>You remain the only owner.</strong><p>Invited admins can add, edit, hide and delete products, manage categories and brands, upload images and update business details. Team access, analytics, customer records and newsletters stay owner-only.</p></div>
     <form className="owner-team-invite" onSubmit={event => { event.preventDefault(); void request({ action: 'invite', email }) }}>
       <label>Administrator email<input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="email" placeholder="name@example.com" disabled={busy}/></label>

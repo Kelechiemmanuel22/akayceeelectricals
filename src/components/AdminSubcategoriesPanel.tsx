@@ -27,7 +27,7 @@ export function AdminSubcategoriesPanel({ categories, products, rows, enabled, o
     finally { setDeleting(false) }
   }
   return <>
-    <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Catalogue structure</p><h2>Subcategories</h2><p>Choose a main category, then create the product groups underneath it.</p></div><button className="button button-dark" disabled={!enabled || !options.length} onClick={() => setCreating(true)}><FolderPlus size={17}/> Add subcategory</button></div>
+    <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Catalogue structure</p><h1>Subcategories</h1><p>Choose a main category, then create the product groups underneath it.</p></div><button className="button button-dark" disabled={!enabled || !options.length} onClick={() => setCreating(true)}><FolderPlus size={17}/> Add subcategory</button></div>
     {!enabled && <div className="owner-error">Apply migration 007_managed_subcategories.sql to enable saved subcategories.</div>}
     {notice && <div className="owner-notice" role="status">{notice}</div>}
     <div className="owner-form-grid"><label>Main category<select value={filter} onChange={event => setFilter(event.target.value)}><option value="">All categories</option>{options.map(item => <option key={item.id} value={canonicalCategory(item.id)}>{categoryName(item)}</option>)}</select></label></div>

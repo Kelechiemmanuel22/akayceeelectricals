@@ -7,6 +7,7 @@ const defaultDescription =
   'Explore electrical materials, home appliances and electronics from A Kaycee Electricals in Ogba, Lagos.'
 
 const routeMeta: Record<string, { title: string; description: string }> = {
+  '/ak-owner-portal': { title: 'Owner Portal | A Kaycee Electricals', description: 'Private catalogue management for A Kaycee Electricals.' },
   '/': {
     title: 'A Kaycee Electricals | Appliances & Electrical Materials in Lagos',
     description: defaultDescription,
@@ -54,7 +55,11 @@ export function RouteMeta() {
   const { products } = useCatalog()
 
   useEffect(() => {
-    trackEvent('page_view')
+    if (!pathname.startsWith('/ak-owner-portal')) trackEvent('page_view')
+    setMeta('robots', pathname.startsWith('/ak-owner-portal') ? 'noindex, nofollow' : 'index, follow')
+  }, [pathname])
+
+  useEffect(() => {
     const productSlug = pathname.startsWith('/products/') ? pathname.slice('/products/'.length) : ''
     const product = productSlug ? products.find((item) => item.slug === productSlug) : undefined
     const meta = product

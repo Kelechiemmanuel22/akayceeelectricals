@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { SiteLayout } from './components/SiteLayout'
 import { ContactPage, NotFoundPage, ServicesPage } from './pages/ContentPages'
 import { HomePage } from './pages/HomePage'
@@ -8,12 +9,12 @@ import { QuoteCartProvider } from './context/QuoteCartContext'
 import { CatalogProvider } from './context/CatalogContext'
 import { ScrollToTop } from './components/ScrollToTop'
 import { RouteMeta } from './components/RouteMeta'
-import { OwnerPortalPage } from './pages/OwnerPortalPage'
 import { ShopToolsProvider } from './context/ShopToolsContext'
 import { SavedComparePage } from './pages/SavedComparePage'
 import { UnsubscribePage } from './pages/UnsubscribePage'
 import { MotionOrchestrator } from './components/MotionOrchestrator'
 import { CategoryPage } from './pages/CategoryPages'
+const OwnerPortalPage = lazy(() => import('./pages/OwnerPortalPage').then(module => ({ default: module.OwnerPortalPage })))
 
 export default function App() {
   return (
@@ -23,7 +24,7 @@ export default function App() {
         <MotionOrchestrator />
         <RouteMeta />
         <Routes>
-          <Route path="/ak-owner-portal" element={<OwnerPortalPage />} />
+          <Route path="/ak-owner-portal" element={<Suspense fallback={<main className="owner-login-shell"><div className="owner-login-card" role="status">Loading your secure workspace…</div></main>}><OwnerPortalPage /></Suspense>} />
           <Route element={<SiteLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />

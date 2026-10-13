@@ -1,0 +1,9 @@
+import { useMemo, useState } from 'react'
+import { Image, Pencil, Search } from 'lucide-react'
+export type AdminMediaItem = { id: string; name: string; kind: 'Product' | 'Category' | 'Brand'; image: string; onEdit: () => void }
+export function AdminMediaPanel({ items }: { items: AdminMediaItem[] }) {
+  const [query, setQuery] = useState('')
+  const [kind, setKind] = useState('All images')
+  const visible = useMemo(() => items.filter(item => (kind === 'All images' || item.kind === kind) && item.name.toLowerCase().includes(query.trim().toLowerCase())), [items, query, kind])
+  return <div><div className="admin-page-heading"><div><h1>Your catalogue images.</h1><p>Review images used by products, categories and brands. Select an item to replace its image.</p></div><span className="admin-count-chip">{items.filter(item => item.image).length} images in use</span></div><div className="admin-media-toolbar"><label><Search size={18}/><input type="search" aria-label="Search media" placeholder="Search images…" value={query} onChange={event => setQuery(event.target.value)}/></label><div aria-label="Media type">{['All images', 'Product', 'Category', 'Brand'].map(value => <button type="button" key={value} className={kind === value ? 'active' : ''} aria-pressed={kind === value} onClick={() => setKind(value)}>{value === 'All images' ? value : value === 'Category' ? 'Categories' : `${value}s`}</button>)}</div></div><div className="admin-media-grid">{visible.map(item => <button className="admin-media-card" type="button" key={item.id} onClick={item.onEdit}><div>{item.image ? <img src={item.image} alt={item.name} loading="lazy"/> : <span><Image size={34}/> No image yet</span>}<i><Pencil size={16}/></i></div><span><small>{item.kind}</small><strong>{item.name}</strong></span></button>)}</div>{!visible.length && <div className="admin-inline-empty">No matching images. Try another search or filter.</div>}</div>
+}
