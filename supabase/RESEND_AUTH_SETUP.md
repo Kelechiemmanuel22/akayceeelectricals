@@ -4,10 +4,12 @@ The owner login now includes Forgot password. Supabase creates and validates the
 
 ## Redirect URLs
 
-In Supabase Authentication → URL Configuration, set Site URL to `https://akayceeelectricals.vercel.app` and allow these exact URLs:
+In Supabase Authentication → URL Configuration, set Site URL to `https://akayceeelectricals.com` and allow these exact URLs:
 
-- `https://akayceeelectricals.vercel.app/ak-owner-portal?reset=1`
-- `https://akayceeelectricals.vercel.app/ak-owner-portal?setup=1` (team invitations)
+- `https://akayceeelectricals.com/ak-owner-portal?reset=1`
+- `https://akayceeelectricals.com/ak-owner-portal?setup=1` (team invitations)
+- `https://akayceeelectricals.vercel.app/ak-owner-portal?reset=1` (retain while old links are in use)
+- `https://akayceeelectricals.vercel.app/ak-owner-portal?setup=1` (retain while old invitations are in use)
 - `http://localhost:5173/ak-owner-portal?reset=1` (development only)
 
 Preserve other legitimate existing redirects. The reset email template must use Supabase's `{{ .ConfirmationURL }}` so tokens are verified before returning to the website. Do not replace this with a plain website link.
@@ -19,6 +21,8 @@ The owner's existing email can be a recipient, not a verified Resend sender if i
 Supabase's default SMTP is restricted to project organisation team addresses, rate-limited and intended for testing, not production. Resend's `onboarding@resend.dev` sender can only send test mail to the email associated with the Resend account. Neither is suitable for general admin invitations or newsletters. Do not globally replace working auth delivery with a test-only sender without explicitly selecting that limitation.
 
 ## Production setup after domain purchase
+
+`akayceeelectricals.com` was verified to serve the current website over HTTPS on 14 October 2026. Its authoritative nameservers are Vercel DNS. This does not establish Resend verification or prove that Supabase SMTP or redirect settings have been updated. Admin sessions and unfinished browser-local drafts are separate between the custom domain and the old Vercel domain, so sign in again on the custom domain.
 
 1. Add and verify a sending domain/subdomain in Resend by adding its displayed DNS records at the domain provider.
 2. Create an appropriately restricted Resend sending key and configure Supabase Authentication → Email → SMTP: host `smtp.resend.com`, port `465`, username `resend`, password the Resend API key, sender address on the verified domain and sender name A Kaycee Electricals. Follow current provider documentation if dashboard fields change.
