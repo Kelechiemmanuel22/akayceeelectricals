@@ -165,6 +165,13 @@
 .admin-media-card i { display:grid; place-items:center; position:absolute; top:10px; right:10px; width:30px; height:30px; background:white; border-radius:6px; border:1px solid #e2e8f3; color:#0764ed; }
 .admin-media-card>span { display:block; padding:14px; border-top:1px solid #edf1f7; }.admin-media-card small { display:block; color:#5c6f8b; font-size:9px; text-transform:uppercase; letter-spacing:1px; }.admin-media-card strong { display:block; margin-top:5px; font-size:11px; font-weight:650; }
 .admin-media-card:hover { border-color:#9ec5fc; }
+.admin-newsletter-actions { display:flex; gap:10px; flex-wrap:wrap; margin-block:12px; }
+.admin-subscriber-choice { display:flex!important; align-items:center; gap:12px; padding:10px 0; overflow-wrap:anywhere; }
+.admin-subscriber-choice input { width:18px!important; height:18px; flex:0 0 auto; accent-color:#005be4; }
+.admin-campaign-history { margin-top:28px; background:#fff; border:1px solid #e1e7ef; border-radius:14px; padding:22px; }
+.admin-campaign-history article { padding:20px 0; border-top:1px solid #e1e7ef; }
+.admin-campaign-history h3 { overflow-wrap:anywhere; font-size:17px; }
+.admin-campaign-history p,.admin-newsletter-panel small { color:#596b87; line-height:1.7; }
 .admin-menu-trigger,.admin-mobile-close,.admin-sidebar-scrim { display:none; }
 @media(min-width:1700px) { .admin-sidebar { width:270px; }.admin-workspace-body { margin-left:270px; }.admin-main { padding:38px; }.admin-summary-card { padding:25px; }.admin-summary-card h2 { font-size:13px; }.admin-panel { padding:25px; } }
 @media(max-width:1300px) { .admin-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.admin-overview-grid { grid-template-columns:minmax(0,1.7fr) minmax(235px,1fr); }.admin-main { padding:24px; }.admin-panel { padding:18px; }.admin-chart-legend { font-size:9px; }.admin-topbar { padding-inline:24px; gap:13px; }.admin-account>button>span:not(.admin-avatar) { display:none; }.admin-media-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }.admin-workspace .owner-management-grid { grid-template-columns:1fr; } }

@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { BarChart3, Check, FolderPlus, ImagePlus, Loader2, LogOut, PackagePlus, Pencil, ShieldCheck, Tags, Trash2, X } from 'lucide-react'
 import { CATALOG_BUCKET, isSupabaseConfigured, supabase } from '../lib/supabase'
 import { AdminGrowthPanel } from '../components/AdminGrowthPanel'
+import { AdminNewsletterPanel } from '../components/AdminNewsletterPanel'
 import { researchedProducts } from '../data/researchedProducts'
 import { AdminTeamPanel, AdminPasswordSetup } from '../components/AdminTeamPanel'
 import { parsePrice } from '../lib/pricing'
@@ -388,7 +389,8 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
       <div className="admin-section-content">
         {notice && <div className="owner-notice"><Check size={17} />{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message"><X size={15} /></button></div>}
         {section === 'overview' && <AdminOverview products={products} categories={categories} brandCount={brands.length} subcategoryCount={managedSubcategories.length} isOwner={isOwner} busy={busy} onNavigate={setSection} onAddProduct={addProduct} onEditProduct={id => setEditing(products.find(item => item.id === id) || null)}/>}
-        {(['analytics', 'requests', 'newsletter'] as AdminSection[]).includes(section) && isOwner && <AdminGrowthPanel key={section} initialTab={section as 'analytics' | 'requests' | 'newsletter'} hideTabs/>}
+        {section === 'newsletter' && isOwner && <AdminNewsletterPanel/>}
+        {(['analytics', 'requests'] as AdminSection[]).includes(section) && isOwner && <AdminGrowthPanel key={section} initialTab={section as 'analytics' | 'requests'} hideTabs/>}
         {section === 'media' && <AdminMediaPanel items={mediaItems}/>}
         {section === 'team' && isOwner && <AdminTeamPanel />}
         {section === 'subcategories' && <AdminSubcategoriesPanel categories={categories} products={products} rows={managedSubcategories} enabled={subcategoriesEnabled} onSaved={load}/>}
