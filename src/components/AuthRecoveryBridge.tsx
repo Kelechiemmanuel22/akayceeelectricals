@@ -14,13 +14,14 @@ export function AuthRecoveryBridge() {
     const routeRecovery = async () => {
       if (disposed || routing || !passwordRecovery.isPending()) return
       routing = true
+      const invalidCallback = passwordRecovery.isInvalid()
       try {
         // Wait until Supabase has processed the emailed callback before changing
         // routes. Moving earlier could remove the fragment before verification.
         const { data, error } = await client.auth.getSession()
         if (disposed) return
         passwordRecovery.clear()
-        navigate(recoveryDestination(Boolean(data.session) && !error), { replace: true })
+        navigate(recoveryDestination(!invalidCallback && Boolean(data.session) && !error), { replace: true })
       } catch {
         if (!disposed) {
           passwordRecovery.clear()

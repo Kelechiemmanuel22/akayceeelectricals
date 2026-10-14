@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
-import { createRecoveryTracker, isPasswordRecoveryCallback } from './authRecovery'
+import { createRecoveryTracker, hasAuthCallbackError, isPasswordRecoveryCallback } from './authRecovery'
 
 // Capture intent before Supabase parses and removes the callback fragment.
-export const passwordRecovery = createRecoveryTracker(typeof window !== 'undefined' && isPasswordRecoveryCallback(window.location.hash))
+export const passwordRecovery = createRecoveryTracker(
+  typeof window !== 'undefined' && isPasswordRecoveryCallback(window.location.hash),
+  typeof window !== 'undefined' && hasAuthCallbackError(window.location.hash, window.location.search),
+)
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
