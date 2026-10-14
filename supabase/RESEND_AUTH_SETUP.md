@@ -2,6 +2,8 @@
 
 The owner login now includes Forgot password. Supabase creates and validates the recovery link; the browser never receives a Resend API key or a service-role key. Request feedback deliberately does not reveal whether an account exists. New passwords require 12 characters and matching confirmation. Passwords and recovery tokens are not stored in catalogue drafts.
 
+The app-level recovery bridge also handles valid recovery callbacks landing on the homepage or other storefront routes. It captures only recovery intent before Supabase processes the URL and listens to PASSWORD_RECOVERY before the lazy owner route mounts. It waits for auth initialization before routing to the password screen; invalid sessions route to expired-link feedback. Ordinary logins and token refreshes do not trigger this bridge. Run `node scripts/check-auth-recovery.mjs` for regression checks. This cannot recover an email template that links directly to the homepage without a Supabase verification token; keep the template's button linked to `{{ .ConfirmationURL }}`.
+
 ## Redirect URLs
 
 In Supabase Authentication → URL Configuration, set Site URL to `https://akayceeelectricals.com` and allow these exact URLs:

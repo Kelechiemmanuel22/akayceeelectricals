@@ -14,11 +14,13 @@ import { SavedComparePage } from './pages/SavedComparePage'
 import { UnsubscribePage } from './pages/UnsubscribePage'
 import { MotionOrchestrator } from './components/MotionOrchestrator'
 import { CategoryPage } from './pages/CategoryPages'
+import { AuthRecoveryBridge } from './components/AuthRecoveryBridge'
 const OwnerPortalPage = lazy(() => import('./pages/OwnerPortalPage').then(module => ({ default: module.OwnerPortalPage })))
 
 export default function App() {
   return (
     <CatalogProvider>
+      <AuthRecoveryBridge />
       <ShopToolsProvider><QuoteCartProvider>
         <ScrollToTop />
         <MotionOrchestrator />
