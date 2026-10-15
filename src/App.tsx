@@ -15,6 +15,7 @@ import { UnsubscribePage } from './pages/UnsubscribePage'
 import { MotionOrchestrator } from './components/MotionOrchestrator'
 import { CategoryPage } from './pages/CategoryPages'
 import { AuthRecoveryBridge } from './components/AuthRecoveryBridge'
+import { BrandPage } from './pages/BrandPage'
 const OwnerPortalPage = lazy(() => import('./pages/OwnerPortalPage').then(module => ({ default: module.OwnerPortalPage })))
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:slug" element={<ProductDetailPage />} />
             <Route path="/category/:categoryId" element={<CategoryPage />} />
+            <Route path="/brand/:brandId" element={<BrandPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/saved" element={<SavedComparePage />} />

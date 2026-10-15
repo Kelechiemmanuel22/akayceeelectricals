@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { BrandItem } from '../data/catalog'
 import { BrandLogo } from './BrandLogos'
+import { brandPath } from '../lib/brandStore'
 
 export function BrandShowcase({ brands }: { brands: BrandItem[] }) {
   return (
@@ -8,7 +9,7 @@ export function BrandShowcase({ brands }: { brands: BrandItem[] }) {
       {brands.map((brand, index) => (
         <Link
           key={brand.name}
-          to={`/products?brand=${encodeURIComponent(brand.name)}`}
+          to={brandPath(brand.name)}
           className="brand-tile"
           aria-label={`Browse ${brand.name} products`}
         >

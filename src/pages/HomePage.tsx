@@ -1,5 +1,6 @@
 import { ArrowRight, BadgeCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { brandPath } from '../lib/brandStore'
 import { useEffect } from 'react'
 import { setPageMeta } from '../lib/site'
 import { BrandLogo } from '../components/BrandLogos'
@@ -63,7 +64,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="showroom-brands">
+      <section className="showroom-brands" id="brands">
         <div className="container">
           <p className="showroom-kicker showroom-kicker-blue">Brands available</p>
           <div className="showroom-brand-row">
@@ -71,7 +72,7 @@ export function HomePage() {
               {[0, 1].map((copy) => (
                 <div className="showroom-brand-group" key={copy} aria-hidden={copy === 1 ? true : undefined}>
                   {brands.map((brand) => (
-                    <Link key={`${copy}-${brand.name}`} to={`/products?brand=${encodeURIComponent(brand.name)}`} aria-label={copy === 0 ? `Browse ${brand.name} products` : undefined} tabIndex={copy === 1 ? -1 : undefined}>
+                    <Link key={`${copy}-${brand.name}`} to={brandPath(brand.name)} aria-label={copy === 0 ? `Browse ${brand.name} products` : undefined} tabIndex={copy === 1 ? -1 : undefined}>
                       <BrandLogo brand={brand.name} logo={brand.logo} logoDark={brand.logoDark} variant="dark" className="showroom-brand-logo" />
                     </Link>
                   ))}

@@ -1,6 +1,7 @@
 import { Check, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { brandPath } from '../lib/brandStore'
 import { ProductCard } from '../components/ProductCard'
 import { BrandFilter } from '../components/BrandFilter'
 import { WhatsAppLink } from '../components/WhatsAppLink'
@@ -64,6 +65,13 @@ export function ProductsPage() {
   }
 
   const hasFilters = Boolean(query || category !== 'all' || brand !== 'all' || sortBy !== 'featured')
+
+  // Preserve existing shared brand links while sending visitors to the storefront.
+  if (params.get('brand') && params.get('brand') !== 'all') {
+    const next = new URLSearchParams(params)
+    next.delete('brand')
+    return <Navigate replace to={`${brandPath(params.get('brand')!)}${next.size ? `?${next}` : ''}`}/>
+  }
 
   return (
     <>
