@@ -1,6 +1,6 @@
 import { Check, X, ArrowRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { brandPath } from '../lib/brandStore'
 import { ProductCard } from '../components/ProductCard'
 import { BrandFilter } from '../components/BrandFilter'
@@ -19,6 +19,10 @@ export function ProductsPage() {
   const category = params.get('category') || 'all'
   const brand = params.get('brand') || 'all'
   const [sortBy, setSortBy] = useState<'featured' | 'az' | 'za'>('featured')
+  const [pagination, setPagination] = useState({ key: '', limit: 12 })
+  const isSearching = Boolean(query.trim())
+  const searchKey = JSON.stringify([query.trim(), category, brand, sortBy])
+  const resultLimit = pagination.key === searchKey ? pagination.limit : 12
 
   useEffect(() => {
     if (!query.trim()) return
@@ -55,6 +59,12 @@ export function ProductsPage() {
     })
   }, [products, categories, brand, category, query, sortBy])
 
+  const recommendations = useMemo(() => categories.map(item => {
+    const matches = displayed.filter(product => product.category.toLowerCase() === item.id.toLowerCase())
+    return { category: item, products: matches.slice(0, 5) }
+  }).filter(group => group.products.length > 0), [categories, displayed])
+  const recommendationCount = recommendations.reduce((count, group) => count + group.products.length, 0)
+
   const reset = () => {
     setQuery('')
     setSortBy('featured')
@@ -77,12 +87,13 @@ export function ProductsPage() {
       <section className="catalogue-section discovery-results" id="search-results">
         <div className="container">
           <div className="catalogue-heading">
-            <div><p className="eyebrow text-gold-dark">Your next good find</p><h2>{query ? `Results for “${query}”` : 'Explore the collection.'}</h2></div>
-            <p role="status" aria-live="polite">{displayed.length} {displayed.length === 1 ? 'item' : 'items'} found</p>
+            <div><p className="eyebrow text-gold-dark">Your next good find</p><h2>{isSearching ? `Results for “${query.trim()}”` : 'Recommended for your space.'}</h2></div>
+            <p role="status" aria-live="polite">{isSearching ? `${displayed.length} ${displayed.length === 1 ? 'item' : 'items'} found` : `${recommendationCount} picks to explore`}</p>
           </div>
+          {!isSearching && <p className="discovery-recommendation-intro">Up to five picks per category, with featured products first. Search above to explore the full catalogue.</p>}
 
           <div className="category-tabs" aria-label="Filter by category">
-            <button type="button" onClick={() => updateFilter('category', 'all')} className={category === 'all' ? 'active' : ''} aria-pressed={category === 'all'}>All products</button>
+            <button type="button" onClick={() => updateFilter('category', 'all')} className={category === 'all' ? 'active' : ''} aria-pressed={category === 'all'}>All categories</button>
             {categories.map((item) => <button key={item.id} type="button" onClick={() => updateFilter('category', item.id)} className={category === item.id ? 'active' : ''} aria-pressed={category === item.id}>{item.name}</button>)}
           </div>
 
@@ -96,7 +107,21 @@ export function ProductsPage() {
           <div className="catalogue-status"><Check size={15} /><span>Pricing and availability are confirmed on enquiry.</span></div>
 
           {displayed.length > 0 ? (
-            <div className="catalogue-grid">{displayed.map((product) => <ProductCard key={product.slug} product={product} />)}</div>
+            isSearching ? <>
+              <div className="catalogue-grid">{displayed.slice(0, resultLimit).map((product) => <ProductCard key={product.slug} product={product} />)}</div>
+              <div className="discovery-results-more">
+                <p role="status">Showing {Math.min(resultLimit, displayed.length)} of {displayed.length} results</p>
+                {resultLimit < displayed.length && <button type="button" className="button button-dark" onClick={() => setPagination({ key: searchKey, limit: resultLimit + 12 })}>Show more results <ArrowRight size={17}/></button>}
+              </div>
+            </> : <div className="discovery-recommendations">
+              {recommendations.map(group => <section key={group.category.id} aria-labelledby={`picks-${group.category.id}`}>
+                <div className="discovery-picks-heading">
+                  <h3 id={`picks-${group.category.id}`}>{group.category.name}</h3>
+                  <Link to={`/category/${group.category.id}`}>Explore category <ArrowRight size={17}/></Link>
+                </div>
+                <div className="catalogue-grid">{group.products.map(product => <ProductCard key={product.slug} product={product}/>)}</div>
+              </section>)}
+            </div>
           ) : (
             <div className="catalogue-empty">
               <p className="eyebrow text-gold-dark">No matches</p>
