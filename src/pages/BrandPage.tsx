@@ -7,6 +7,7 @@ import { ProductCard } from '../components/ProductCard'
 import { WhatsAppLink } from '../components/WhatsAppLink'
 import { brandKey, brandPath, filterBrandProducts, relatedBrands } from '../lib/brandStore'
 import { categoryHeroes } from '../data/categoryHeroes'
+import { CollectionSort, type CollectionSortValue } from '../components/CollectionSort'
 import '../brand-store.css'
 
 export function BrandPage() {
@@ -14,13 +15,13 @@ export function BrandPage() {
   const { brands, categories, products, isLoading } = useCatalog()
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState('featured')
+  const [sort, setSort] = useState<CollectionSortValue>('featured')
   const brand = brands.find(item => brandKey(item.name) === brandKey(brandId))
   const category = params.get('category') || 'all'
   const otherBrands = useMemo(() => relatedBrands(brands, products, brand?.name || brandId, category), [brands, products, brand, brandId, category])
   const brandProducts = useMemo(() => filterBrandProducts(products, brand?.name || brandId), [products, brand, brandId])
   const availableCategories = categories.filter(item => brandProducts.some(product => product.category === item.id))
-  const displayed = useMemo(() => [...filterBrandProducts(products, brand?.name || brandId, category, query)].sort((a,b) => sort === 'az' ? a.name.localeCompare(b.name) : Number(Boolean(b.featured)) - Number(Boolean(a.featured))), [products, brand, brandId, category, query, sort])
+  const displayed = useMemo(() => [...filterBrandProducts(products, brand?.name || brandId, category, query)].sort((a,b) => sort === 'az' ? a.name.localeCompare(b.name) : sort === 'za' ? b.name.localeCompare(a.name) : Number(Boolean(b.featured)) - Number(Boolean(a.featured))), [products, brand, brandId, category, query, sort])
   useEffect(() => { setQuery(''); setSort('featured') }, [brandId])
   const selectCategory = (id: string) => {
     const next = new URLSearchParams(params)
@@ -64,7 +65,7 @@ export function BrandPage() {
     <section id="brand-collection" className="category-products-section brand-store-collection"><div className="container">
       <div className="category-products-heading"><div><p className="eyebrow text-gold-dark">The {brand.name} collection</p><h2>Made for your everyday.</h2></div><label><Search size={18}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={`Search ${brand.name} products`} aria-label={`Search ${brand.name} products`}/>{query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')}><X size={17}/></button>}</label></div>
       <div className="cooling-product-tabs collection-type-tabs" aria-label={`Filter ${brand.name} by category`}><button type="button" className={category === 'all' ? 'active' : ''} aria-pressed={category === 'all'} onClick={() => selectCategory('all')}>All {brand.name}</button>{availableCategories.map(item => <button key={item.id} type="button" className={category === item.id ? 'active' : ''} aria-pressed={category === item.id} onClick={() => selectCategory(item.id)}>{item.name}</button>)}</div>
-      <div className="brand-store-toolbar"><p>{displayed.length} {displayed.length === 1 ? 'product' : 'products'}</p><label>Sort <select value={sort} onChange={event => setSort(event.target.value)} aria-label="Sort brand products"><option value="featured">Featured first</option><option value="az">Name A–Z</option></select></label></div>
+      <div className="brand-store-toolbar"><p>{displayed.length} {displayed.length === 1 ? 'product' : 'products'}</p><CollectionSort value={sort} onChange={setSort}/></div>
       <div className="catalogue-status"><Check size={15}/><span>Confirm current pricing and availability with the store.</span></div>
       {isLoading ? <p role="status">Updating the collection…</p> : displayed.length ? <div className="catalogue-grid">{displayed.map(product => <ProductCard key={product.slug} product={product} showPrice/>)}</div> : <div className="catalogue-empty"><h3>{brandProducts.length ? 'Let’s find your right fit.' : `More ${brand.name}, coming soon.`}</h3><p>{brandProducts.length ? 'Try another category or search term.' : 'Ask the store about the model you have in mind.'}</p><div className="catalogue-empty-actions">{brandProducts.length > 0 && <button className="button button-dark" onClick={reset}>Reset filters</button>}<WhatsAppLink subject={`${brand.name} product enquiry`}>Ask on WhatsApp</WhatsAppLink></div></div>}
     </div></section>

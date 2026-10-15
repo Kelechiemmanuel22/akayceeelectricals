@@ -1,4 +1,4 @@
-import { Check, Search, SlidersHorizontal, X } from 'lucide-react'
+import { Check, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { brandPath } from '../lib/brandStore'
@@ -8,6 +8,7 @@ import { WhatsAppLink } from '../components/WhatsAppLink'
 import { useCatalog } from '../context/CatalogContext'
 import { setPageMeta } from '../lib/site'
 import { trackEvent } from '../lib/engagement'
+import { CollectionSort } from '../components/CollectionSort'
 
 export function ProductsPage() {
   const { products, categories, brands } = useCatalog()
@@ -106,15 +107,7 @@ export function ProductsPage() {
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products, categories or brands" aria-label="Search products" />
               {query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={16} /></button>}
             </label>
-            <label className="catalogue-sort">
-              <SlidersHorizontal size={17} />
-              <span>Sort</span>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value as 'featured' | 'az' | 'za')} aria-label="Sort products">
-                <option value="featured">Featured first</option>
-                <option value="az">Name A–Z</option>
-                <option value="za">Name Z–A</option>
-              </select>
-            </label>
+            <CollectionSort value={sortBy} onChange={setSortBy}/>
             {hasFilters && <button type="button" onClick={reset} className="catalogue-reset"><X size={15} /> Reset</button>}
           </div>
 
