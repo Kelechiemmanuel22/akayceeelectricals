@@ -22,7 +22,6 @@ export function ProductCard({ product, showPrice = false }: { product: Product; 
             ;(event.currentTarget as HTMLImageElement).src = '/assets/products/copper-cable-coil.jpg'
           }}
         />
-        <span className="product-card-badge">Demo catalogue</span>
         <span className="product-card-view">View details</span>
       </Link>
       <div className="product-card-tools"><button className={saved.includes(product.slug)?'active':''} onClick={()=>toggleSaved(product.slug)} aria-label={`${saved.includes(product.slug)?'Remove':'Save'} ${product.name}`}><Bookmark size={15}/></button><button className={compared.includes(product.slug)?'active':''} onClick={()=>toggleCompared(product.slug)} aria-label={`${compared.includes(product.slug)?'Remove from':'Add to'} comparison`}><GitCompareArrows size={15}/></button></div>

@@ -63,9 +63,6 @@ export function ProductDetailPage() {
                     ;(e.target as HTMLImageElement).src = '/assets/products/copper-cable-coil.jpg'
                   }}
                 />
-                <span className="absolute left-4 top-4 rounded-full bg-ink/90 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gold-light backdrop-blur-xs">
-                  Demo catalogue item
-                </span>
               </div>
 
               {/* Instagram Unboxing / Showcase Link */}
