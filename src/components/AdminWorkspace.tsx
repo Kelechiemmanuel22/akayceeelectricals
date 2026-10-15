@@ -68,8 +68,19 @@ export function AdminWorkspace({ section, onNavigate, isOwner, email, logo, sear
       }
       background.forEach(item => { item.element.inert = true })
       const controls = () => [...dialog.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')].filter(item => item.getClientRects().length)
-      const focus = dialog.querySelector<HTMLElement>('input:not([disabled]),select:not([disabled])') || controls()[0]
-      focus?.focus()
+      // Do not summon the phone keyboard before the admin chooses a field.
+      const focus = window.matchMedia('(max-width: 760px)').matches
+        ? controls()[0]
+        : dialog.querySelector<HTMLElement>('input:not([disabled]),select:not([disabled])') || controls()[0]
+      focus?.focus({ preventScroll: true })
+      const viewport = window.visualViewport
+      const fitViewport = () => {
+        dialog.style.setProperty('--editor-viewport-height', `${viewport?.height || window.innerHeight}px`)
+        dialog.style.setProperty('--editor-viewport-top', `${viewport?.offsetTop || 0}px`)
+      }
+      fitViewport()
+      viewport?.addEventListener('resize', fitViewport)
+      viewport?.addEventListener('scroll', fitViewport)
       const key = (event: KeyboardEvent) => {
         if (event.key === 'Escape') { event.preventDefault(); dialog.querySelector<HTMLButtonElement>('button[aria-label="Close editor"]')?.click() }
         if (event.key === 'Tab') {
@@ -80,10 +91,12 @@ export function AdminWorkspace({ section, onNavigate, isOwner, email, logo, sear
       }
       document.addEventListener('keydown', key)
       restore = () => {
+        viewport?.removeEventListener('resize', fitViewport)
+        viewport?.removeEventListener('scroll', fitViewport)
         document.body.style.overflow = overflow
         background.forEach(item => { item.element.inert = item.inert })
         document.removeEventListener('keydown', key)
-        if (previous?.isConnected) previous.focus()
+        if (previous?.isConnected) previous.focus({ preventScroll: true })
       }
     }
     const observer = new MutationObserver(observe)
@@ -111,7 +124,7 @@ export function AdminWorkspace({ section, onNavigate, isOwner, email, logo, sear
   return <div className="admin-workspace">
     <a className="admin-skip" href="#admin-main">Skip to content</a>
     {menuOpen && <button className="admin-sidebar-scrim" aria-label="Close navigation" onClick={closeMenu}/ >}
-    <aside ref={sidebarRef} inert={mobileNav && !menuOpen} className={`admin-sidebar ${menuOpen ? 'is-open' : ''}`} aria-label="Admin navigation" id="admin-sidebar">
+    <aside ref={sidebarRef} inert={mobileNav && !menuOpen} role={mobileNav && menuOpen ? 'dialog' : undefined} aria-modal={mobileNav && menuOpen ? true : undefined} className={`admin-sidebar ${menuOpen ? 'is-open' : ''}`} aria-label="Admin navigation" id="admin-sidebar">
       <div className="admin-brand"><a href="/" aria-label="A Kaycee Electricals website"><img src={logoSrc} alt="A Kaycee Electricals"/><span>OWNER PORTAL</span></a><button ref={closeRef} className="admin-mobile-close" onClick={closeMenu} aria-label="Close navigation"><X size={22}/></button></div>
       <nav>{items.filter(item => !('owner' in item) || !item.owner || isOwner).map((item, index, visible) => <div key={item.id}>{item.group && item.group !== visible[index - 1]?.group && <p className="admin-nav-label">{item.group}</p>}<button type="button" aria-current={section === item.id ? 'page' : undefined} className={section === item.id ? 'active' : ''} onClick={() => navigate(item.id)}><item.icon size={20} strokeWidth={1.7}/><span>{item.label}</span></button></div>)}</nav>
       <div className="admin-sidebar-profile"><span className="admin-avatar">{initials}</span><div><strong>{isOwner ? 'Store owner' : 'Administrator'}</strong><small title={email}>{email}</small></div><button type="button" onClick={onSignOut} title="Sign out" aria-label="Sign out"><LogOut size={18}/></button></div>

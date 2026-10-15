@@ -180,3 +180,88 @@
 @media(max-width:390px) { .admin-main { padding-inline:13px; }.admin-summary-card { gap:8px; padding:14px 11px; }.admin-summary-icon svg { width:17px; height:17px; }.admin-summary-card strong { font-size:25px; }.admin-page-actions { width:100%; }.admin-date-filter { margin-top:4px; }.admin-panel { padding:16px; }.admin-sidebar-profile small { max-width:140px; }.admin-workspace .owner-management-card { grid-template-columns:80px minmax(0,1fr); padding:14px; }.admin-workspace .owner-management-card>img,.admin-workspace .owner-brand-logo { width:80px; height:80px; }.admin-workspace .owner-subcategory-row { gap:8px; padding:14px; }.admin-workspace .owner-subcategory-row strong { font-size:12px; }.admin-workspace .owner-subcategory-row .owner-row-actions { gap:0; } }
 @media(prefers-reduced-motion:reduce) { .admin-workspace * { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
 @media(max-width:760px) { .admin-workspace .owner-form-grid input,.admin-workspace .owner-form-grid select,.admin-workspace .owner-form-grid textarea,.admin-workspace .campaign-form input,.admin-workspace .campaign-form textarea { font-size:16px; }.admin-workspace .owner-product-row .owner-pill { justify-self:start; }.admin-workspace .owner-product-row .owner-pill:nth-of-type(1) { grid-column:1 / 3; }.admin-workspace .owner-product-row .owner-pill:nth-of-type(2) { grid-column:3; grid-row:2; }.admin-workspace .owner-product-copy { overflow-wrap:anywhere; } }
+
+/* Keep the workspace usable on a phone, including while its keyboard is open. */
+.admin-section-content,.admin-workspace .owner-form-grid>*,.admin-workspace .campaign-form>*,.admin-workspace .owner-section-heading>div { min-width:0; }
+.admin-workspace .owner-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.admin-workspace .owner-editor { max-height:calc(100dvh - 64px); overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.admin-workspace .owner-form-grid small,.admin-workspace .owner-management-card h3,.admin-workspace .owner-subcategory-row>div:first-child,.admin-workspace .request-contact { overflow-wrap:anywhere; }
+.admin-sidebar nav { min-height:0; overscroll-behavior:contain; }
+.admin-table-scroll { max-width:100%; overscroll-behavior-x:contain; }
+@media(max-width:1050px) {
+  .admin-sidebar { width:min(300px,calc(100vw - 48px)); height:100dvh; visibility:hidden; transition:transform .2s,visibility .2s; padding-bottom:env(safe-area-inset-bottom); }
+  .admin-sidebar.is-open { visibility:visible; }
+  .admin-brand { flex-shrink:0; padding-top:30px; }
+  .admin-sidebar-profile { flex-shrink:0; }
+  .admin-sidebar nav button { min-height:48px; font-size:14px; }
+  .admin-menu-trigger,.admin-mobile-close,.admin-top-icon,.admin-account>button,.admin-sidebar-profile>button { min-width:44px; min-height:44px; }
+  .admin-menu-trigger { margin-left:0; padding:10px; border:1px solid var(--admin-border); background:white; border-radius:10px; }
+  .admin-mobile-close { top:3px; right:3px; background:transparent; }
+}
+@media(max-width:760px) {
+  .admin-workspace { font-size:14px; }
+  .admin-main { padding:20px 16px calc(28px + env(safe-area-inset-bottom)); }
+  .admin-topbar { padding:10px 12px; gap:8px; padding-top:max(10px,env(safe-area-inset-top)); }
+  .admin-breadcrumb { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; font-size:13px; }
+  .admin-breadcrumb>span { margin:0 5px; }
+  .admin-global-search { padding:11px 12px; border-radius:9px; }
+  .admin-global-search input,.admin-workspace .owner-search,.admin-workspace .owner-team-invite input,.admin-workspace .request-contact select { font-size:16px; }
+  .admin-search-results { max-height:45dvh; }
+  .admin-search-results button { min-height:48px; }
+  .admin-search-results strong { font-size:14px; }
+  .admin-account-menu a,.admin-account-menu button { min-height:44px; font-size:14px; }
+  .admin-summary-card { flex-direction:column; gap:8px; padding:16px; border-radius:12px; }
+  .admin-summary-card h2 { font-size:12px; }
+  .admin-summary-card p,.admin-summary-card .admin-trend span { font-size:11px; }
+  .admin-summary-icon svg { width:22px; height:22px; }
+  .admin-page-actions { width:100%; }
+  .admin-page-actions>.admin-button { flex:1; }
+  .admin-button,.admin-workspace .button { min-height:46px; font-size:13px; }
+  .admin-date-filter { width:100%; }
+  .admin-date-filter select { width:100%; height:44px; font-size:16px; }
+  .admin-workspace .owner-section-heading { gap:16px; margin-bottom:20px; }
+  .admin-workspace .owner-section-heading>.button { width:100%; }
+  .admin-workspace .owner-section-heading p:not(.eyebrow) { font-size:13px; }
+  .admin-workspace .owner-product-row { grid-template-columns:56px minmax(0,1fr); gap:12px; padding:14px; border-radius:12px; }
+  .admin-workspace .owner-product-row>img { width:56px; height:56px; }
+  .admin-workspace .owner-product-copy strong { font-size:14px; }
+  .admin-workspace .owner-product-copy span { font-size:12px; }
+  .admin-workspace .owner-product-row .owner-pill:nth-of-type(1) { grid-column:1 / -1; grid-row:2; justify-self:start; }
+  .admin-workspace .owner-product-row .owner-pill:nth-of-type(2) { grid-column:1 / -1; grid-row:2; justify-self:end; }
+  .admin-workspace .owner-product-row .owner-row-actions { grid-column:1 / -1; grid-row:3; justify-content:flex-end; border-top:1px solid var(--admin-border); padding-top:8px; }
+  .admin-workspace .owner-pill { min-height:44px; font-size:12px; padding:8px 12px; }
+  .admin-workspace .owner-row-actions button,.admin-workspace .owner-editor-header>button { width:44px; height:44px; flex-shrink:0; }
+  .admin-workspace .owner-row-actions button { background:#f1f5fb; }
+  .admin-workspace .owner-management-card { grid-template-columns:72px minmax(0,1fr); padding:14px; gap:12px; }
+  .admin-workspace .owner-management-card>img,.admin-workspace .owner-brand-logo { width:72px; height:72px; }
+  .admin-workspace .owner-management-card p:not(.owner-card-kicker) { font-size:12px; }
+  .admin-workspace .owner-subcategory-row { flex-wrap:wrap; gap:12px; padding:16px; }
+  .admin-workspace .owner-subcategory-row>div:first-child { flex:1 1 160px; }
+  .admin-workspace .owner-subcategory-row .owner-row-actions { margin-left:auto; gap:8px; }
+  .admin-workspace .owner-subcategory-row strong { font-size:14px; }
+  .admin-workspace .owner-form-grid { grid-template-columns:minmax(0,1fr); gap:18px; }
+  .admin-workspace .owner-form-grid label { font-size:13px; }
+  .admin-workspace .owner-form-grid input:not([type=checkbox]),.admin-workspace .owner-form-grid select { min-height:48px; }
+  .admin-workspace .owner-check { min-height:44px; }
+  .admin-workspace .owner-upload { min-height:56px; padding:14px; }
+  .admin-workspace .owner-modal { top:var(--editor-viewport-top,0px); bottom:auto; height:var(--editor-viewport-height,100dvh); overflow:hidden; padding:12px; display:flex; align-items:center; }
+  .admin-workspace .owner-editor { max-height:100%; margin:0 auto; padding:18px; border-radius:16px; -webkit-overflow-scrolling:touch; scroll-padding-block:70px 90px; }
+  .admin-workspace .owner-editor-header { position:sticky; top:-18px; z-index:2; background:white; padding-block:12px; margin-top:-12px; border-bottom:1px solid var(--admin-border); }
+  .admin-workspace .owner-editor-header h2 { font-size:23px; }
+  .admin-workspace .owner-editor-actions { position:sticky; bottom:-18px; z-index:2; background:white; padding:14px 0 max(14px,env(safe-area-inset-bottom)); border-top:1px solid var(--admin-border); margin-bottom:-18px; }
+  .admin-workspace .owner-editor-actions>.button { flex:1; padding-inline:8px; }
+  .admin-workspace .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .admin-workspace .analytics-grid,.admin-workspace .newsletter-admin-grid { grid-template-columns:minmax(0,1fr); }
+  .admin-workspace .metric-grid article,.admin-workspace .analytics-grid section,.admin-workspace .subscriber-panel,.admin-workspace .campaign-form,.admin-workspace .request-list article { padding:16px; min-width:0; }
+  .admin-workspace .subscriber-panel>div:first-child { flex-wrap:wrap; }
+  .admin-workspace .request-list article { grid-template-columns:minmax(0,1fr); }
+  .admin-workspace .request-contact { text-align:left; }
+  .admin-newsletter-actions>.button { flex:1 1 140px; }
+  .admin-campaign-history { padding:16px; }
+  .admin-data-error { flex-wrap:wrap; overflow-wrap:anywhere; }
+  .admin-media-card strong { font-size:12px; overflow-wrap:anywhere; }
+  .owner-login-shell { min-height:100dvh; padding:16px; }
+  .owner-login-card { min-width:0; padding:24px; border-radius:20px; }
+  .owner-login-card input { min-height:48px; font-size:16px; }
+  .owner-login-card .button,.owner-login-card .owner-back-link { min-height:44px; }
+}
