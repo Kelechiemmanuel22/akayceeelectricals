@@ -41,6 +41,12 @@
 .editorial-process h3 { font-size:23px; font-weight:700; letter-spacing:-.03em; }
 .editorial-process li p { margin-top:12px; font-size:14px; line-height:1.8; color:#bbc6d9; }
 .editorial-quote { background:#f0e9dd; padding-block:clamp(64px,8vw,112px); }
+.editorial-quote-image { display:none; }
+@media(min-width:1024px) {
+  .editorial-quote-grid { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); align-items:center; gap:64px; }
+  .editorial-quote-image { display:block; aspect-ratio:4/3; border-radius:20px; overflow:hidden; background:#ded1bf; }
+  .editorial-quote-image img { display:block; width:100%; height:100%; object-fit:cover; }
+}
 .editorial-quote h2 { margin-top:20px; }
 .editorial-quote h2>span { color:#be6a00; }
 .editorial-quote p:not(.eyebrow) { max-width:570px; margin-top:24px; line-height:1.8; font-size:15px; color:#526074; }
