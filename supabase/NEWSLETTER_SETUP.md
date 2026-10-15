@@ -1,5 +1,12 @@
 # Newsletter activation
 
+Deployment record (15 October 2026): migration `newsletter_delivery` applied to
+`hzqkoovmqkfoxsoqpegx`; `send-newsletter` version 3 deployed with JWT verification
+enabled and its shared template dependency. Database smoke tests passed for
+signup, token unsubscribe/rotation, suppression and anonymous RLS. All synthetic
+test rows were rolled back. Inbox delivery still requires the owner-only test
+below; settings detection alone is not proof of delivery.
+
 Frontend controls are included in the owner portal. They stay disabled when the required schema or sending settings are missing. Supabase Auth SMTP configuration is independent of these Edge Function secrets.
 
 1. Run `supabase/migrations/008_newsletter_delivery.sql` in the existing project's SQL Editor. This requires migration 002. It adds campaign audiences/status details, token-based unsubscribe and owner-RLS-protected audience lookup. Existing subscriber rows and campaigns are preserved. Old email-address-only unsubscribe links are intentionally disabled; new campaigns use token links. No newsletter is sent by the migration.
