@@ -5,7 +5,9 @@ Deployment record (15 October 2026): migration `newsletter_delivery` applied to
 enabled and its shared template dependency. Database smoke tests passed for
 signup, token unsubscribe/rotation, suppression and anonymous RLS. All synthetic
 test rows were rolled back. Inbox delivery still requires the owner-only test
-below; settings detection alone is not proof of delivery.
+below; settings detection alone is not proof of delivery. The owner portal
+subsequently reported that Resend accepted the owner-only setup test. Inbox
+receipt is pending owner confirmation. No subscriber campaign was sent.
 
 Frontend controls are included in the owner portal. They stay disabled when the required schema or sending settings are missing. Supabase Auth SMTP configuration is independent of these Edge Function secrets.
 
