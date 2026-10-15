@@ -1,6 +1,6 @@
 import { Check, X, ArrowRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { brandPath } from '../lib/brandStore'
 import { ProductCard } from '../components/ProductCard'
 import { BrandFilter } from '../components/BrandFilter'
@@ -59,11 +59,18 @@ export function ProductsPage() {
     })
   }, [products, categories, brand, category, query, sortBy])
 
-  const recommendations = useMemo(() => categories.map(item => {
-    const matches = displayed.filter(product => product.category.toLowerCase() === item.id.toLowerCase())
-    return { category: item, products: matches.slice(0, 5) }
-  }).filter(group => group.products.length > 0), [categories, displayed])
-  const recommendationCount = recommendations.reduce((count, group) => count + group.products.length, 0)
+  const recommendations = useMemo(() => {
+    const groups = categories.map(item => displayed.filter(product => product.category.toLowerCase() === item.id.toLowerCase()).slice(0, 5))
+    // Take one pick from each category before taking the next, so the grid is mixed.
+    return Array.from({ length: 5 }, (_, index) => groups.flatMap(group => group[index] ? [group[index]] : [])).flat()
+  }, [categories, displayed])
+
+  const changeQuery = (value: string) => {
+    setQuery(value)
+    setPagination({ key: '', limit: 12 })
+    // A new search must not remain restricted by an earlier category shortcut.
+    if (category !== 'all') updateFilter('category', 'all')
+  }
 
   const reset = () => {
     setQuery('')
@@ -82,15 +89,15 @@ export function ProductsPage() {
 
   return (
     <div className="discovery-page search-editorial">
-      <DiscoverySearchHero query={query} onChange={setQuery} categories={categories} onCategory={value=>{setQuery('');updateFilter('category',value)}}/>
+      <DiscoverySearchHero query={query} onChange={changeQuery} categories={categories} onCategory={value=>{setQuery('');updateFilter('category',value)}}/>
 
       <section className="catalogue-section discovery-results" id="search-results">
         <div className="container">
           <div className="catalogue-heading">
             <div><p className="eyebrow text-gold-dark">Your next good find</p><h2>{isSearching ? `Results for “${query.trim()}”` : 'Recommended for your space.'}</h2></div>
-            <p role="status" aria-live="polite">{isSearching ? `${displayed.length} ${displayed.length === 1 ? 'item' : 'items'} found` : `${recommendationCount} picks to explore`}</p>
+            <p role="status" aria-live="polite">{isSearching ? `${displayed.length} ${displayed.length === 1 ? 'item' : 'items'} found` : `${recommendations.length} picks to explore`}</p>
           </div>
-          {!isSearching && <p className="discovery-recommendation-intro">Up to five picks per category, with featured products first. Search above to explore the full catalogue.</p>}
+          {!isSearching && <p className="discovery-recommendation-intro">A little of everything, all in one place. Search above to find more from the full catalogue.</p>}
 
           <div className="catalogue-toolbar">
             <BrandFilter value={brand} brands={brands.map(item => item.name)} onChange={value => updateFilter('brand', value)}/>
@@ -108,14 +115,8 @@ export function ProductsPage() {
                 <p role="status">Showing {Math.min(resultLimit, displayed.length)} of {displayed.length} results</p>
                 {resultLimit < displayed.length && <button type="button" className="button button-dark" onClick={() => setPagination({ key: searchKey, limit: resultLimit + 12 })}>Show more results <ArrowRight size={17}/></button>}
               </div>
-            </> : <div className="discovery-recommendations">
-              {recommendations.map(group => <section key={group.category.id} aria-labelledby={`picks-${group.category.id}`}>
-                <div className="discovery-picks-heading">
-                  <h3 id={`picks-${group.category.id}`}>{group.category.name}</h3>
-                  <Link to={`/category/${group.category.id}`}>Explore category <ArrowRight size={17}/></Link>
-                </div>
-                <div className="catalogue-grid">{group.products.map(product => <ProductCard key={product.slug} product={product}/>)}</div>
-              </section>)}
+            </> : <div className="catalogue-grid discovery-mixed-picks">
+              {recommendations.map(product => <ProductCard key={product.slug} product={product}/>)}
             </div>
           ) : (
             <div className="catalogue-empty">
