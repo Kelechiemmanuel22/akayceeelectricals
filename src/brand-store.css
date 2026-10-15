@@ -32,11 +32,26 @@
 .brand-store-help h2 { margin-top:18px; font-size:clamp(40px,5.5vw,74px); line-height:1.06; font-weight:800; letter-spacing:-.05em; }
 .brand-store-help p:not(.eyebrow) { margin-top:20px; color:#d2d7e8; font-size:14px; }
 .brand-store-help .eyebrow { color:#ffc060; }
+.brand-store-others { padding-block:clamp(56px,7vw,96px); background:#faf9f6; }
+.brand-store-other-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; margin-top:32px; }
+.brand-store-other-card { min-width:0; overflow:hidden; padding:24px; border:1px solid #e2e5eb; border-radius:12px; background:white; transition:border-color .2s,box-shadow .2s; }
+.brand-store-other-card:hover { border-color:#939cb6; box-shadow:0 8px 25px #0614540a; }
+.brand-store-other-logo { display:flex; align-items:center; justify-content:center; height:100px; min-width:0; }
+.brand-store-other-logo>img,.brand-store-other-logo>svg { display:block; width:100%; max-width:160px; height:60px; object-fit:contain; }
+.brand-store-other-logo>span { max-width:100%; overflow-wrap:anywhere; }
+.brand-store-other-card>span { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:20px; margin-top:12px; border-top:1px solid #edf0f4; font-size:14px; }
+.brand-store-other-card strong { overflow-wrap:anywhere; }
+.brand-store-other-card>span>svg { flex-shrink:0; color:var(--color-gold-dark); }
 @media(max-width:900px) {
+  .brand-store-other-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .brand-store-intro>.container { flex-wrap:wrap; gap:20px; }
   .brand-store-range-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:600px) {
+  .brand-store-other-grid { gap:12px; }
+  .brand-store-other-card { padding:16px; }
+  .brand-store-other-logo { height:72px; }
+  .brand-store-other-card>span { font-size:12px; }
   .brand-store-hero>.brand-store-hero-image { object-position:72% top; }
   .brand-store-hero-shade { background:linear-gradient(0deg,#f5ecdc 0%,rgba(245,236,220,.97) 27%,rgba(245,236,220,.68) 47%,rgba(245,236,220,.05) 75%,rgba(245,236,220,.3)); }
   .brand-store-hero .brand-store-hero-copy { justify-content:flex-end; padding-top:230px; padding-bottom:72px; }
