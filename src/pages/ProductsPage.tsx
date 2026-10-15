@@ -62,7 +62,7 @@ export function ProductsPage() {
   const recommendations = useMemo(() => {
     const groups = categories.map(item => displayed.filter(product => product.category.toLowerCase() === item.id.toLowerCase()).slice(0, 5))
     // Take one pick from each category before taking the next, so the grid is mixed.
-    return Array.from({ length: 5 }, (_, index) => groups.flatMap(group => group[index] ? [group[index]] : [])).flat()
+    return Array.from({ length: 5 }, (_, index) => groups.flatMap(group => group[index] ? [group[index]] : [])).flat().slice(0, 7)
   }, [categories, displayed])
 
   const changeQuery = (value: string) => {
