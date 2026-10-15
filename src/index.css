@@ -114,8 +114,8 @@ a { text-decoration: none; }
 .collection-sort-menu>button:hover,.collection-sort-menu>button:focus-visible { background:#f3f5f9; }
 .collection-sort-trigger:focus-visible,.collection-sort-menu>button:focus-visible { outline:2px solid #0764ed; outline-offset:3px; }
 @keyframes storefront-arrow-float { 0%,100% { translate:0 0; } 50% { translate:0 -3px; } }
-@media(prefers-reduced-motion:no-preference) { .min-h-screen svg:is([class*="lucide-arrow-"],[class*="lucide-chevron-"]) { animation:storefront-arrow-float 2.8s ease-in-out infinite; } }
-@media(prefers-reduced-motion:reduce) { .min-h-screen svg:is([class*="lucide-arrow-"],[class*="lucide-chevron-"]) { animation:none!important; translate:none; } }
+@media(prefers-reduced-motion:no-preference) { .min-h-screen :is(.button,.showroom-button) svg[class*="lucide-arrow-"] { animation:storefront-arrow-float 2.8s ease-in-out infinite; } }
+@media(prefers-reduced-motion:reduce) { .min-h-screen :is(.button,.showroom-button) svg[class*="lucide-arrow-"] { animation:none!important; translate:none; } }
 .whatsapp-button-label>svg,.button>svg { flex-shrink:0; }
 
 .button-compact {
