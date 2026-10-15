@@ -97,6 +97,9 @@ a { text-decoration: none; }
   transform: translateY(0);
 }
 
+.whatsapp-button-label { display:inline-flex; align-items:center; justify-content:center; gap:.6rem; white-space:nowrap; }
+.whatsapp-button-label>svg,.button>svg { flex-shrink:0; }
+
 .button-compact {
   padding: 0.6rem 1rem;
   font-size: 0.78rem;

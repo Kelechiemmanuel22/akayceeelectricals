@@ -36,8 +36,8 @@ export function WhatsAppLink({
       aria-label="Direct chat on WhatsApp"
       onClick={() => trackEvent('whatsapp_click', { metadata: { subject: subject || 'general enquiry' } })}
     >
-      <WhatsAppIcon className={compact ? 'size-4' : 'size-4.5'} />
-      <span>{children}</span>
+      <WhatsAppIcon className={compact ? 'size-4 shrink-0' : 'size-4.5 shrink-0'} />
+      <span className="whatsapp-button-label">{children}</span>
     </a>
   )
 }
