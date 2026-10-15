@@ -92,11 +92,6 @@ export function ProductsPage() {
           </div>
           {!isSearching && <p className="discovery-recommendation-intro">Up to five picks per category, with featured products first. Search above to explore the full catalogue.</p>}
 
-          <div className="category-tabs" aria-label="Filter by category">
-            <button type="button" onClick={() => updateFilter('category', 'all')} className={category === 'all' ? 'active' : ''} aria-pressed={category === 'all'}>All categories</button>
-            {categories.map((item) => <button key={item.id} type="button" onClick={() => updateFilter('category', item.id)} className={category === item.id ? 'active' : ''} aria-pressed={category === item.id}>{item.name}</button>)}
-          </div>
-
           <div className="catalogue-toolbar">
             <BrandFilter value={brand} brands={brands.map(item => item.name)} onChange={value => updateFilter('brand', value)}/>
             {query && <span className="discovery-query-chip">{query}<button type="button" aria-label="Clear search filter" onClick={()=>setQuery('')}><X size={15}/></button></span>}
