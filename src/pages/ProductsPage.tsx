@@ -1,4 +1,4 @@
-import { Check, Search, X } from 'lucide-react'
+import { Check, X, ArrowRight } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { brandPath } from '../lib/brandStore'
@@ -9,13 +9,15 @@ import { useCatalog } from '../context/CatalogContext'
 import { setPageMeta } from '../lib/site'
 import { trackEvent } from '../lib/engagement'
 import { CollectionSort } from '../components/CollectionSort'
+import { DiscoverySearchHero } from '../components/DiscoverySearchHero'
+import '../discovery.css'
 
 export function ProductsPage() {
   const { products, categories, brands } = useCatalog()
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState('')
-  const [category, setCategory] = useState(params.get('category') || 'all')
-  const [brand, setBrand] = useState(params.get('brand') || 'all')
+  const category = params.get('category') || 'all'
+  const brand = params.get('brand') || 'all'
   const [sortBy, setSortBy] = useState<'featured' | 'az' | 'za'>('featured')
 
   useEffect(() => {
@@ -26,11 +28,6 @@ export function ProductsPage() {
   }, [query])
 
   useEffect(() => {
-    setCategory(params.get('category') || 'all')
-    setBrand(params.get('brand') || 'all')
-  }, [params])
-
-  useEffect(() => {
     setPageMeta('Electrical Materials, Appliances & Electronics Catalogue', 'Browse demo catalogue items across electrical materials, appliances and electronics from A Kaycee Electricals in Lagos.')
   }, [])
 
@@ -38,13 +35,14 @@ export function ProductsPage() {
     const next = new URLSearchParams(params)
     if (value === 'all') next.delete(key)
     else next.set(key, value)
-    setParams(next)
+    setParams(next, { preventScrollReset: true })
   }
 
   const displayed = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
     const result = products.filter((product) => {
-      const searchable = `${product.name} ${product.brand} ${product.description} ${product.specs.join(' ')}`.toLowerCase()
+      const categoryName = categories.find(item => item.id === product.category)?.name || product.category
+      const searchable = `${product.name} ${product.brand} ${categoryName} ${product.description} ${product.specs.join(' ')}`.toLowerCase()
       return (!normalizedQuery || searchable.includes(normalizedQuery)) &&
         (category === 'all' || product.category.toLowerCase() === category.toLowerCase()) &&
         (brand === 'all' || product.brand.toLowerCase() === brand.toLowerCase())
@@ -55,12 +53,10 @@ export function ProductsPage() {
       if (sortBy === 'za') return b.name.localeCompare(a.name)
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured))
     })
-  }, [products, brand, category, query, sortBy])
+  }, [products, categories, brand, category, query, sortBy])
 
   const reset = () => {
     setQuery('')
-    setCategory('all')
-    setBrand('all')
     setSortBy('featured')
     setParams({})
   }
@@ -75,24 +71,14 @@ export function ProductsPage() {
   }
 
   return (
-    <>
-      <section className="catalogue-hero catalogue-lifestyle-hero">
-        <img className="catalogue-lifestyle-image" src="/assets/business/family-lifestyle-hero-light.jpg" alt="Bright comfortable modern family home" />
-        <div className="catalogue-lifestyle-overlay" />
-        <div className="container catalogue-hero-grid">
-          <div className="catalogue-lifestyle-copy">
-            <p className="eyebrow text-gold-light">A Kaycee catalogue</p>
-            <h1>Designed for your home.<br /><span>Ready for your project.</span></h1>
-            <p>Browse appliances, electronics and electrical materials, then ask the store team to confirm current pricing and availability.</p>
-          </div>
-        </div>
-      </section>
+    <div className="discovery-page search-editorial">
+      <DiscoverySearchHero query={query} onChange={setQuery} categories={categories} onCategory={value=>{setQuery('');updateFilter('category',value)}}/>
 
-      <section className="catalogue-section">
+      <section className="catalogue-section discovery-results" id="search-results">
         <div className="container">
           <div className="catalogue-heading">
-            <div><p className="eyebrow text-gold-dark">Browse catalogue</p><h2>Find the right fit.</h2></div>
-            <p>{displayed.length} {displayed.length === 1 ? 'item' : 'items'} shown</p>
+            <div><p className="eyebrow text-gold-dark">Your next good find</p><h2>{query ? `Results for “${query}”` : 'Explore the collection.'}</h2></div>
+            <p role="status" aria-live="polite">{displayed.length} {displayed.length === 1 ? 'item' : 'items'} found</p>
           </div>
 
           <div className="category-tabs" aria-label="Filter by category">
@@ -102,11 +88,7 @@ export function ProductsPage() {
 
           <div className="catalogue-toolbar">
             <BrandFilter value={brand} brands={brands.map(item => item.name)} onChange={value => updateFilter('brand', value)}/>
-            <label className="catalogue-search">
-              <Search size={18} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products, categories or brands" aria-label="Search products" />
-              {query && <button type="button" onClick={() => setQuery('')} aria-label="Clear search"><X size={16} /></button>}
-            </label>
+            {query && <span className="discovery-query-chip">{query}<button type="button" aria-label="Clear search filter" onClick={()=>setQuery('')}><X size={15}/></button></span>}
             <CollectionSort value={sortBy} onChange={setSortBy}/>
             {hasFilters && <button type="button" onClick={reset} className="catalogue-reset"><X size={15} /> Reset</button>}
           </div>
@@ -118,18 +100,18 @@ export function ProductsPage() {
           ) : (
             <div className="catalogue-empty">
               <p className="eyebrow text-gold-dark">No matches</p>
-              <h3>We could not find that item in this demo catalogue.</h3>
-              <p>Clear the filters or ask the store team about the exact product you need.</p>
-              <div><button type="button" onClick={reset} className="button button-dark">Clear filters</button><WhatsAppLink subject="unlisted product or brand enquiry">Ask on WhatsApp</WhatsAppLink></div>
+              <h3>Not here? Let’s find it.</h3>
+              <p>Try another search or ask our team about the exact item.</p>
+              <div className="catalogue-empty-actions"><button type="button" onClick={reset} className="button button-dark">Clear filters</button><WhatsAppLink subject={query || 'unlisted product or brand enquiry'}>Ask on WhatsApp</WhatsAppLink></div>
             </div>
           )}
 
-          <div className="project-banner">
-            <div><p className="eyebrow text-gold-light">Project and bulk enquiries</p><h3>Working from a bill of quantities?</h3><p>Send your material list or appliance requirements to discuss suitable options and request a current quote.</p></div>
-            <WhatsAppLink subject="Bulk electrical material Bill of Quantities (BOQ)">Send your list</WhatsAppLink>
+          <div className="discovery-search-help">
+            <div><p className="eyebrow">A little guidance?</p><h3>Tell us what you have in mind.</h3><p>A room upgrade or a project list—we’ll help you explore the options.</p></div>
+            <WhatsAppLink subject="Help finding a product" variant="gold">Help me choose <ArrowRight size={17}/></WhatsAppLink>
           </div>
         </div>
       </section>
-    </>
+    </div>
   )
 }
