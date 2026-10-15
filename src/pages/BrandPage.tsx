@@ -5,7 +5,7 @@ import { useCatalog } from '../context/CatalogContext'
 import { BrandLogo } from '../components/BrandLogos'
 import { ProductCard } from '../components/ProductCard'
 import { WhatsAppLink } from '../components/WhatsAppLink'
-import { brandKey, brandPath, filterBrandProducts } from '../lib/brandStore'
+import { brandKey, brandPath, filterBrandProducts, relatedBrands } from '../lib/brandStore'
 import { categoryHeroes } from '../data/categoryHeroes'
 import '../brand-store.css'
 
@@ -16,8 +16,8 @@ export function BrandPage() {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('featured')
   const brand = brands.find(item => brandKey(item.name) === brandKey(brandId))
-  const otherBrands = brands.filter(item => brandKey(item.name) !== brandKey(brandId))
   const category = params.get('category') || 'all'
+  const otherBrands = useMemo(() => relatedBrands(brands, products, brand?.name || brandId, category), [brands, products, brand, brandId, category])
   const brandProducts = useMemo(() => filterBrandProducts(products, brand?.name || brandId), [products, brand, brandId])
   const availableCategories = categories.filter(item => brandProducts.some(product => product.category === item.id))
   const displayed = useMemo(() => [...filterBrandProducts(products, brand?.name || brandId, category, query)].sort((a,b) => sort === 'az' ? a.name.localeCompare(b.name) : Number(Boolean(b.featured)) - Number(Boolean(a.featured))), [products, brand, brandId, category, query, sort])
@@ -70,8 +70,8 @@ export function BrandPage() {
     </div></section>
     <section className="brand-store-help"><div className="container"><div><p className="eyebrow">A real conversation. A better choice.</p><h2>Your home.<br/>Your {brand.name}.</h2><p>Tell us what you’re looking for. We’ll help with the details.</p></div><WhatsAppLink subject={`Help choosing ${brand.name} products`} variant="gold">Let’s find your fit <ArrowRight size={17}/></WhatsAppLink></div></section>
     {otherBrands.length > 0 && <section className="brand-store-others" aria-labelledby="other-brands-title"><div className="container">
-      <div className="cooling-section-title"><p className="eyebrow text-gold-dark">Keep exploring</p><h2 id="other-brands-title">Explore other brands.</h2></div>
-      <div className="brand-store-other-grid">{otherBrands.map(item => <Link key={item.name} to={brandPath(item.name)} className="brand-store-other-card" aria-label={`Explore ${item.name} brand store`}>
+      <div className="cooling-section-title"><p className="eyebrow text-gold-dark">Similar products. More choice.</p><h2 id="other-brands-title">Explore similar brands.</h2></div>
+      <div className="brand-store-other-grid">{otherBrands.map(item => <Link key={item.name} to={`${brandPath(item.name)}${category !== 'all' ? `?category=${encodeURIComponent(category)}` : ''}`} className="brand-store-other-card" aria-label={`Explore ${item.name} brand store`}>
         <div className="brand-store-other-logo"><BrandLogo brand={item.name} logo={item.logo} logoDark={item.logoDark} variant="light"/></div>
         <span><strong>{item.name}</strong><ArrowRight size={18}/></span>
       </Link>)}</div>
