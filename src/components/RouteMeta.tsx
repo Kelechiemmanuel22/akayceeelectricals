@@ -78,7 +78,7 @@ export function RouteMeta() {
         }
       : dealCombo ? { title: `${dealCombo.name} | A Kaycee Electricals`, description: dealCombo.description }
       : dealCollection && dealParts.length === 2 ? { title: `${dealCollection.name} | A Kaycee Electricals`, description: dealCollection.description }
-      : pathname === '/deals' ? { title: 'Combo Deals | A Kaycee Electricals', description: 'Explore Student Deals, Odogwu Deals and thoughtfully paired appliance packages for your space.' }
+      : dealParts[0] === 'deals' ? { title: 'Combo Deals | A Kaycee Electricals', description: 'Explore thoughtfully paired appliance packages for your space. Availability and final pricing are confirmed by the store.' }
       : brand ? { title: `${brand.name} Brand Store | A Kaycee Electricals`, description: `Explore ${brand.name} appliances and electronics at A Kaycee Electricals. Browse the collection and enquire on WhatsApp for current availability.` } : routeMeta[pathname] || {
           title: 'Page Not Found | A Kaycee Electricals',
           description: defaultDescription,

@@ -48,14 +48,14 @@ export function resolveCombo(combo: ComboDeal, products: Product[]) {
   })
 }
 export function comboIsAvailable(combo: ComboDeal, products: Product[]) {
-  return combo.active && combo.items.length >= 2 && new Set(combo.items.map(item => item.slug)).size === combo.items.length && combo.items.every(item => Number.isInteger(item.quantity) && item.quantity > 0) && resolveCombo(combo, products).length === combo.items.length
+  return combo.active && combo.items.length >= 2 && combo.items.length <= 50 && new Set(combo.items.map(item => item.slug)).size === combo.items.length && combo.items.every(item => Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99) && resolveCombo(combo, products).length === combo.items.length
 }
 export function validDealsData(value: unknown): value is DealsData {
   if (!value || typeof value !== 'object') return false
   const data = value as DealsData
   return (data.enabled === undefined || typeof data.enabled === 'boolean') && Array.isArray(data.collections) && Array.isArray(data.combos) &&
     data.collections.every(c => c && typeof c.id === 'string' && typeof c.name === 'string' && typeof c.description === 'string' && typeof c.eyebrow === 'string' && typeof c.image === 'string' && ['student', 'odogwu', 'seasonal'].includes(c.theme) && typeof c.active === 'boolean' && typeof c.featured === 'boolean' && Number.isFinite(c.order) && typeof c.startsAt === 'string' && typeof c.endsAt === 'string') &&
-    data.combos.every(c => c && typeof c.id === 'string' && typeof c.collectionId === 'string' && typeof c.name === 'string' && typeof c.description === 'string' && typeof c.active === 'boolean' && (c.price === null || (Number.isFinite(c.price) && c.price >= 0)) && Array.isArray(c.items) && c.items.every(item => item && typeof item.slug === 'string' && Number.isInteger(item.quantity) && item.quantity > 0))
+    data.combos.every(c => c && typeof c.id === 'string' && typeof c.collectionId === 'string' && typeof c.name === 'string' && typeof c.description === 'string' && typeof c.active === 'boolean' && (c.priceIsEstimate === undefined || typeof c.priceIsEstimate === 'boolean') && (c.price === null || (Number.isFinite(c.price) && c.price >= 0 && c.price <= 9999999999)) && Array.isArray(c.items) && c.items.every(item => item && typeof item.slug === 'string' && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99))
 }
 export const dealPrice = (price: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(price)
 

@@ -46,7 +46,7 @@ export function ProductDetailPage() {
           {/* Breadcrumbs */}
           <Link
             to="/products"
-            className="inline-flex items-center gap-2 text-xs font-bold text-gold-dark transition hover:text-ink"
+            className="product-back-link inline-flex items-center gap-2 text-xs font-bold text-gold-dark transition hover:text-ink"
           >
             <ArrowLeft size={16} /> Back to All Products
           </Link>

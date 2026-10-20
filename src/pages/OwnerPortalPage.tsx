@@ -321,7 +321,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
   const deleteProduct = async (product: ProductRow) => {
     if (!supabase || !window.confirm(`Delete ${product.name}? This cannot be undone.`)) return
     const { error } = await supabase.from('products').delete().eq('id', product.id)
-    setNotice(error ? error.message : `${product.name} deleted.`)
+    setNotice(error?.code === '23503' ? 'This product is used in a combo deal. Remove or replace it in the combo packages before deleting it.' : error ? error.message : `${product.name} deleted.`)
     if (!error) await load()
   }
 
