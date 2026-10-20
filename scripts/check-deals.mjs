@@ -4,7 +4,7 @@ import { stripTypeScriptTypes } from 'node:module'
 
 const source = stripTypeScriptTypes(readFileSync(new URL('../src/lib/deals.ts', import.meta.url), 'utf8'))
 const deals = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
-const { previewDeals, addPreviewPriceEstimates, collectionIsLive, comboIsAvailable, resolveCombo, comboQuoteProduct, validDealsData } = deals
+const { previewDeals, addPreviewPriceEstimates, collectionIsLive, comboIsAvailable, resolveCombo, comboQuoteProduct, validDealsData, isDealCoverUrl } = deals
 const collection = previewDeals.collections[0]
 const now = Date.parse('2026-10-20T12:00:00Z')
 assert.equal(validDealsData(previewDeals), true)
@@ -34,6 +34,13 @@ assert.equal(quote.slug, 'combo:campus-comfort')
 assert.equal(quote.category, 'combo-deals')
 assert.equal(quote.price, 245000)
 assert.equal(quote.priceIsEstimate, true)
+assert.equal(comboQuoteProduct({ ...combo, coverImage: '/assets/deals/student-life-v1.jpg' }, collection, products).image, '/assets/deals/student-life-v1.jpg')
+assert.equal(quote.image, collection.image, 'Packages without a cover keep the collection image in the quote')
+assert.equal(validDealsData({ ...previewDeals, combos: [{ ...combo, coverImage: '/assets/deals/student-life-v1.jpg', coverAlt: 'Campus comforts' }] }), true)
+assert.equal(validDealsData({ ...previewDeals, combos: [{ ...combo, coverImage: 123 }] }), false)
+assert.equal(validDealsData({ ...previewDeals, combos: [{ ...combo, coverAlt: 'x'.repeat(181) }] }), false)
+for (const url of ['', '/assets/deals/cover.jpg', 'https://example.com/cover.png', 'http://localhost:5173/cover.jpg']) assert.equal(isDealCoverUrl(url), true, url)
+for (const url of ['javascript:alert(1)', 'data:image/png;base64,test', '//example.com/image.jpg', 'file:///C:/image.jpg', 'https://user:password@example.com/image.jpg', '/\\example.com/image.jpg', 'not an image url']) assert.equal(isDealCoverUrl(url), false, url)
 assert.ok(quote.specs[1].startsWith('2 × '))
 assert.equal(previewDeals.collections.find(item => item.id === 'festive-deals').active, false)
 const allProducts = [...new Set(previewDeals.combos.flatMap(combo => combo.items.map(item => item.slug)))].map(slug => ({ slug, name: slug, category: 'test', brand: 'Test', description: 'Test', specs: [], image: '/test.jpg' }))

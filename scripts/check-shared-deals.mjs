@@ -22,6 +22,8 @@ for (const collection of snapshot.collections) {
   assert.ok(!collection.endsAt || Date.parse(collection.endsAt) > now, 'Expired collections must remain private.')
 }
 for (const combo of snapshot.combos) {
+  assert.equal(typeof combo.coverImage, 'string', 'The API must return a shared cover field, even when empty.')
+  assert.equal(typeof combo.coverAlt, 'string')
   assert.equal(combo.active, true, 'Paused packages must not be exposed by the API.')
   assert.ok(snapshot.collections.some(c => c.id === combo.collectionId), 'A hidden collection must not expose its packages.')
   assert.ok(combo.items.length >= 2)
@@ -43,10 +45,17 @@ for (const arg of process.argv.slice(2)) {
     const [id, price] = arg.slice(8).split(':')
     assert.equal(snapshot.combos.find(c => c.id === id)?.price, Number(price))
   }
+  if (arg.startsWith('--has-cover=')) {
+    const combo = snapshot.combos.find(c => c.id === arg.split('=')[1])
+    assert.ok(combo?.coverImage?.startsWith(`${base}/storage/v1/object/public/deal-covers/combos/`), 'The uploaded cover must be persisted in the public shared snapshot.')
+    const cover = await fetch(combo.coverImage)
+    assert.equal(cover.status, 200, 'Visitors must be able to load the cover file.')
+    assert.ok(cover.headers.get('content-type')?.startsWith('image/'))
+  }
 }
 // Permission checks must reject attempts rather than silently relying on UI gating.
 const forbiddenSave = await request('rpc/save_deals_catalog', { payload: snapshot, expected_revision: snapshot.revision })
 assert.ok([401, 403].includes(forbiddenSave.status), 'Anonymous publishing must be denied.')
 const forbiddenUpdate = await request('deal_settings?id=eq.1', { enabled: !snapshot.enabled }, 'PATCH')
 assert.ok([401, 403].includes(forbiddenUpdate.status), 'Anonymous table updates must be denied.')
-console.log(JSON.stringify({ passed: true, scope: 'anonymous shared API and denied publishing', enabled: snapshot.enabled, revision: snapshot.revision, collections: snapshot.collections.map(c => c.id), packages: snapshot.combos.map(c => ({ id: c.id, price: c.price })) }, null, 2))
+console.log(JSON.stringify({ passed: true, scope: 'anonymous shared API and denied publishing', enabled: snapshot.enabled, revision: snapshot.revision, collections: snapshot.collections.map(c => c.id), packages: snapshot.combos.map(c => ({ id: c.id, price: c.price, hasCover: Boolean(c.coverImage) })) }, null, 2))

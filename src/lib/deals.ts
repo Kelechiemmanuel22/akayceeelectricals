@@ -7,6 +7,7 @@ export type DealCollection = {
 }
 export type ComboDeal = {
   id: string; collectionId: string; name: string; description: string
+  coverImage?: string; coverAlt?: string
   items: { slug: string; quantity: number }[]; price: number | null; priceIsEstimate?: boolean; active: boolean
 }
 export type DealsData = { enabled?: boolean; collections: DealCollection[]; combos: ComboDeal[] }
@@ -55,10 +56,17 @@ export function validDealsData(value: unknown): value is DealsData {
   const data = value as DealsData
   return (data.enabled === undefined || typeof data.enabled === 'boolean') && Array.isArray(data.collections) && Array.isArray(data.combos) &&
     data.collections.every(c => c && typeof c.id === 'string' && typeof c.name === 'string' && typeof c.description === 'string' && typeof c.eyebrow === 'string' && typeof c.image === 'string' && ['student', 'odogwu', 'seasonal'].includes(c.theme) && typeof c.active === 'boolean' && typeof c.featured === 'boolean' && Number.isFinite(c.order) && typeof c.startsAt === 'string' && typeof c.endsAt === 'string') &&
-    data.combos.every(c => c && typeof c.id === 'string' && typeof c.collectionId === 'string' && typeof c.name === 'string' && typeof c.description === 'string' && typeof c.active === 'boolean' && (c.priceIsEstimate === undefined || typeof c.priceIsEstimate === 'boolean') && (c.price === null || (Number.isFinite(c.price) && c.price >= 0 && c.price <= 9999999999)) && Array.isArray(c.items) && c.items.every(item => item && typeof item.slug === 'string' && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99))
+    data.combos.every(c => c && typeof c.id === 'string' && typeof c.collectionId === 'string' && typeof c.name === 'string' && typeof c.description === 'string' && (c.coverImage === undefined || (typeof c.coverImage === 'string' && isDealCoverUrl(c.coverImage))) && (c.coverAlt === undefined || (typeof c.coverAlt === 'string' && c.coverAlt.length <= 180)) && typeof c.active === 'boolean' && (c.priceIsEstimate === undefined || typeof c.priceIsEstimate === 'boolean') && (c.price === null || (Number.isFinite(c.price) && c.price >= 0 && c.price <= 9999999999)) && Array.isArray(c.items) && c.items.every(item => item && typeof item.slug === 'string' && Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99))
+}
+export function isDealCoverUrl(value: string) {
+  if (!value) return true
+  if (value.length > 2048 || /[\\\s]/.test(value)) return false
+  if (/^\/[^/]/.test(value)) return true
+  if (!/^https?:\/\//.test(value)) return false
+  try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password } catch { return false }
 }
 export const dealPrice = (price: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(price)
 
 export function comboQuoteProduct(combo: ComboDeal, collection: DealCollection, products: Product[]): Product {
-  return { slug: `combo:${combo.id}`, name: `${combo.name} — ${collection.name}`, category: 'combo-deals', brand: 'A Kaycee', image: collection.image, description: combo.description, price: combo.price, priceIsEstimate: Boolean(combo.priceIsEstimate), specs: resolveCombo(combo, products).map(item => `${item.quantity} × ${item.product.name}`) }
+  return { slug: `combo:${combo.id}`, name: `${combo.name} — ${collection.name}`, category: 'combo-deals', brand: 'A Kaycee', image: combo.coverImage || collection.image, description: combo.description, price: combo.price, priceIsEstimate: Boolean(combo.priceIsEstimate), specs: resolveCombo(combo, products).map(item => `${item.quantity} × ${item.product.name}`) }
 }

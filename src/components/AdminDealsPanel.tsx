@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react'
-import { ArrowUpRight, Check, Gift, Pause, Pencil, Play, Plus, X } from 'lucide-react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { ArrowUpRight, Check, Gift, ImagePlus, Download, Loader2, Pause, Pencil, Play, Plus, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCatalog } from '../context/CatalogContext'
 import { useDeals } from '../context/DealsContext'
-import { collectionIsLive, comboIsAvailable, dealPrice, previewDeals, type ComboDeal, type DealCollection } from '../lib/deals'
+import { collectionIsLive, comboIsAvailable, dealPrice, isDealCoverUrl, previewDeals, type ComboDeal, type DealCollection } from '../lib/deals'
+import { downloadDealCover, uploadDealCover } from '../lib/dealCoverUpload'
 import '../deals.css'
 
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -21,6 +22,32 @@ export function AdminDealsPanel() {
   const [error, setError] = useState('')
   const [productQuery, setProductQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState('')
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [downloadingCover, setDownloadingCover] = useState(false)
+  const [coverPreviewFailed, setCoverPreviewFailed] = useState(false)
+  const [coverNotice, setCoverNotice] = useState('')
+  const coverInput = useRef<HTMLInputElement>(null)
+  const coverBusy = uploadingCover || downloadingCover
+  const uploadCover = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setError(''); setCoverNotice(''); setUploadingCover(true)
+    try {
+      const url = await uploadDealCover(file)
+      setCombo(current => current ? { ...current, coverImage: url } : current)
+      setCoverPreviewFailed(false)
+      setCoverNotice('Uploaded. Save changes to use this cover on the website.')
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Could not upload this cover. Your existing cover is unchanged.') }
+    finally { setUploadingCover(false) }
+  }
+  const downloadCover = async () => {
+    if (!combo?.coverImage) return
+    setError(''); setCoverNotice(''); setDownloadingCover(true)
+    try { await downloadDealCover(combo.coverImage, combo.id || slugify(combo.name)); setCoverNotice('Cover downloaded. You can upload this same artwork to Instagram.') }
+    catch { setError('Could not download this image. Use “Open original” and save the image, or check your connection.') }
+    finally { setDownloadingCover(false) }
+  }
   const toggleAllDeals = async () => {
     const result = await saveData({ ...data, enabled: !enabled })
     if (!result.success) { setNotice(result.message || 'Could not publish. Please try again.'); return }
@@ -35,8 +62,8 @@ export function AdminDealsPanel() {
     setCollection(value ? { ...value } : { id: '', name: '', eyebrow: '', description: '', image: '/assets/deals/student-life-v1.jpg', theme: 'student', active: false, featured: false, order: data.collections.length + 1, startsAt: '', endsAt: '' })
   }
   const openCombo = (value?: ComboDeal) => {
-    setIsNew(!value); setError(''); setEditorVersion(version); setProductQuery(''); setSelectedProduct('')
-    setCombo(value ? { ...value, priceIsEstimate: value.priceIsEstimate ?? false, items: value.items.map(item => ({ ...item })) } : { id: '', collectionId: data.collections[0]?.id || '', name: '', description: '', items: [], price: null, priceIsEstimate: false, active: false })
+    setIsNew(!value); setError(''); setEditorVersion(version); setProductQuery(''); setSelectedProduct(''); setCoverNotice(''); setCoverPreviewFailed(false)
+    setCombo(value ? { ...value, coverImage: value.coverImage || '', coverAlt: value.coverAlt || '', priceIsEstimate: value.priceIsEstimate ?? false, items: value.items.map(item => ({ ...item })) } : { id: '', collectionId: data.collections[0]?.id || '', name: '', description: '', coverImage: '', coverAlt: '', items: [], price: null, priceIsEstimate: false, active: false })
   }
   const saveCollection = async (event: FormEvent) => {
     event.preventDefault()
@@ -53,7 +80,9 @@ export function AdminDealsPanel() {
   const saveCombo = async (event: FormEvent) => {
     event.preventDefault()
     if (!combo) return
-    const next = { ...combo, name: combo.name.trim(), id: combo.id || slugify(combo.name) }
+    const next = { ...combo, name: combo.name.trim(), id: combo.id || slugify(combo.name), coverImage: combo.coverImage?.trim() || '', coverAlt: combo.coverAlt?.trim() || '' }
+    if (coverBusy) return
+    if (!isDealCoverUrl(next.coverImage)) { setError('Use a valid image URL or a local /assets/ path. Do not use a data URL or browser-local file link.'); return }
     if (!next.id || !next.name || !data.collections.some(item => item.id === next.collectionId)) { setError('Enter a name and choose a collection.'); return }
     if (isNew && data.combos.some(item => item.id === next.id)) { setError('A package with this name already exists.'); return }
     if (!comboIsAvailable({ ...next, active: true }, products)) { setError('Choose at least two available products, with a whole-number quantity of 1 or more for each.'); return }
@@ -85,7 +114,7 @@ export function AdminDealsPanel() {
 
     <div className="deals-admin-tabs"><button className={tab === 'collections' ? 'active' : ''} onClick={() => setTab('collections')}>Deal collections ({data.collections.length})</button><button className={tab === 'combos' ? 'active' : ''} onClick={() => setTab('combos')}>Combo packages ({data.combos.length})</button></div>
     <div className="deals-admin-heading"><h2>{tab === 'collections' ? 'Student, Odogwu, festive…' : 'What goes in the package?'}</h2><button className="button button-dark" onClick={() => tab === 'collections' ? openCollection() : openCombo()} disabled={tab === 'combos' && !data.collections.length}><Plus size={17}/> {tab === 'collections' ? 'Add collection' : 'Add combo'}</button></div>
-    {tab === 'collections' ? <div className="deals-admin-list">{[...data.collections].sort((a, b) => a.order - b.order).map(item => <article key={item.id}><img src={item.image} alt=""/><div><h3>{item.name}</h3><p>{data.combos.filter(combo => combo.collectionId === item.id).length} packages · Order {item.order}{item.featured ? ' · Homepage featured' : ''}</p><small>{!item.active ? 'Paused — hidden with all its packages' : !collectionIsLive(item) ? 'Outside scheduled dates' : 'Active — visible when it has an available package'}</small></div><div className="deals-admin-row-actions"><button className="button button-light" aria-label={`${item.active ? 'Pause' : 'Resume'} ${item.name}`} onClick={() => toggleCollection(item)}>{item.active ? <Pause size={15}/> : <Play size={15}/>} {item.active ? 'Pause' : 'Resume'}</button><button className="button button-light" aria-label={`Edit ${item.name}`} onClick={() => openCollection(item)}><Pencil size={15}/> Edit</button></div></article>)}</div> : <div className="deals-admin-list">{data.combos.map(item => <article key={item.id}><div className="deals-admin-icon"><Gift size={25}/></div><div><h3>{item.name}</h3><p>{data.collections.find(collection => collection.id === item.collectionId)?.name} · {item.items.length} products · {item.price === null ? 'Price on enquiry' : dealPrice(item.price)}</p><small>{!item.active ? 'Paused — hidden from customers' : !comboIsAvailable(item, products) ? 'Unavailable — check linked products' : 'Active — follows collection visibility and dates'}</small></div><div className="deals-admin-row-actions"><button className="button button-light" aria-label={`${item.active ? 'Pause' : 'Resume'} ${item.name}`} onClick={() => toggleCombo(item)}>{item.active ? <Pause size={15}/> : <Play size={15}/>} {item.active ? 'Pause' : 'Resume'}</button><button className="button button-light" aria-label={`Edit ${item.name}`} onClick={() => openCombo(item)}><Pencil size={15}/> Edit</button></div></article>)}</div>}
+    {tab === 'collections' ? <div className="deals-admin-list">{[...data.collections].sort((a, b) => a.order - b.order).map(item => <article key={item.id}><img src={item.image} alt=""/><div><h3>{item.name}</h3><p>{data.combos.filter(combo => combo.collectionId === item.id).length} packages · Order {item.order}{item.featured ? ' · Homepage featured' : ''}</p><small>{!item.active ? 'Paused — hidden with all its packages' : !collectionIsLive(item) ? 'Outside scheduled dates' : 'Active — visible when it has an available package'}</small></div><div className="deals-admin-row-actions"><button className="button button-light" aria-label={`${item.active ? 'Pause' : 'Resume'} ${item.name}`} onClick={() => toggleCollection(item)}>{item.active ? <Pause size={15}/> : <Play size={15}/>} {item.active ? 'Pause' : 'Resume'}</button><button className="button button-light" aria-label={`Edit ${item.name}`} onClick={() => openCollection(item)}><Pencil size={15}/> Edit</button></div></article>)}</div> : <div className="deals-admin-list">{data.combos.map(item => <article key={item.id}>{item.coverImage ? <img className="deals-admin-cover" src={item.coverImage} alt=""/> : <div className="deals-admin-icon"><Gift size={25}/></div>}<div><h3>{item.name}</h3><p>{data.collections.find(collection => collection.id === item.collectionId)?.name} · {item.items.length} products · {item.price === null ? 'Price on enquiry' : dealPrice(item.price)}</p><small>{!item.active ? 'Paused — hidden from customers' : !comboIsAvailable(item, products) ? 'Unavailable — check linked products' : 'Active — follows collection visibility and dates'}</small></div><div className="deals-admin-row-actions"><button className="button button-light" aria-label={`${item.active ? 'Pause' : 'Resume'} ${item.name}`} onClick={() => toggleCombo(item)}>{item.active ? <Pause size={15}/> : <Play size={15}/>} {item.active ? 'Pause' : 'Resume'}</button><button className="button button-light" aria-label={`Edit ${item.name}`} onClick={() => openCombo(item)}><Pencil size={15}/> Edit</button></div></article>)}</div>}
     </fieldset>
     {collection && <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Deal collection editor"><form className="owner-editor" onSubmit={saveCollection}><fieldset className="deals-publishing-controls" disabled={saving}><div className="owner-editor-header"><div><p className="eyebrow">Shared store</p><h2>{isNew ? 'Add collection' : 'Edit collection'}</h2></div><button type="button" aria-label="Close editor" onClick={() => setCollection(null)}><X/></button></div><div className="owner-form-grid">
       <label>Collection name<input required maxLength={80} value={collection.name} onChange={event => setCollection({ ...collection, name: event.target.value })}/></label>
@@ -99,10 +128,17 @@ export function AdminDealsPanel() {
       <label className="owner-check"><input type="checkbox" checked={collection.active} onChange={event => setCollection({ ...collection, active: event.target.checked })}/> Enable collection on website</label>
       <label className="owner-check"><input type="checkbox" checked={collection.featured} onChange={event => setCollection({ ...collection, featured: event.target.checked })}/> Feature on homepage</label>
     </div><img className="owner-image-preview" src={collection.image} alt="Collection preview"/>{error && <p className="owner-error" role="alert">{error}</p>}<div className="owner-editor-actions"><button type="button" className="button button-light" onClick={() => setCollection(null)}>Cancel</button><button className="button button-dark" disabled={!ready}><Check size={16}/> {saving ? 'Publishing…' : 'Save changes'}</button></div></fieldset></form></div>}
-    {combo && <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Combo package editor"><form className="owner-editor" onSubmit={saveCombo}><fieldset className="deals-publishing-controls" disabled={saving}><div className="owner-editor-header"><div><p className="eyebrow">Shared store</p><h2>{isNew ? 'Add combo package' : 'Edit combo package'}</h2></div><button type="button" aria-label="Close editor" onClick={() => setCombo(null)}><X/></button></div><div className="owner-form-grid">
+    {combo && <div className="owner-modal" role="dialog" aria-modal="true" aria-label="Combo package editor"><form className="owner-editor" onSubmit={saveCombo}><fieldset className="deals-publishing-controls" disabled={saving || coverBusy}><div className="owner-editor-header"><div><p className="eyebrow">Shared store</p><h2>{isNew ? 'Add combo package' : 'Edit combo package'}</h2></div><button type="button" aria-label="Close editor" onClick={() => setCombo(null)}><X/></button></div><div className="owner-form-grid">
       <label>Package name<input required maxLength={100} value={combo.name} onChange={event => setCombo({ ...combo, name: event.target.value })}/></label><label>Deal collection<select required value={combo.collectionId} onChange={event => setCombo({ ...combo, collectionId: event.target.value })}>{data.collections.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label className="owner-wide">Description<textarea required rows={3} maxLength={500} value={combo.description} onChange={event => setCombo({ ...combo, description: event.target.value })}/></label>
       <label>Bundle price (NGN) — optional<input type="number" min={0} max={9999999999} step={1} value={combo.price ?? ''} onChange={event => setCombo({ ...combo, price: event.target.value === '' ? null : Number(event.target.value) })}/><small>Price for the complete package. Keep the estimated label until the owner confirms the offer. Leave blank for enquiry.</small></label><label className="owner-check"><input type="checkbox" checked={Boolean(combo.priceIsEstimate)} onChange={event => setCombo({ ...combo, priceIsEstimate: event.target.checked })}/> Label price as an estimate</label><label className="owner-check"><input type="checkbox" checked={combo.active} onChange={event => setCombo({ ...combo, active: event.target.checked })}/> Enable package on website</label>
+    </div><div className="deal-cover-editor"><div><h3>Promotional cover</h3><p>Upload the artwork you use for this combo on Instagram. It appears on this package’s card and detail page, not the whole collection.</p></div>
+      <button type="button" className="owner-upload" onClick={() => coverInput.current?.click()}>{uploadingCover ? <Loader2 size={20} className="animate-spin"/> : <ImagePlus size={20}/>} {uploadingCover ? 'Uploading cover…' : combo.coverImage ? 'Replace cover image' : 'Upload cover image'}</button><input ref={coverInput} type="file" hidden aria-label="Choose promotional cover file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={event => void uploadCover(event)}/>
+      <p className="deal-cover-help">JPG, PNG, WebP or AVIF · Up to 5 MB. Square or portrait artwork works well. The full image is shown without cropping. Uploaded artwork is publicly accessible by its link; don’t upload private information.</p>
+      <label>Cover image URL — optional<input type="text" maxLength={2048} value={combo.coverImage || ''} placeholder="https://… or /assets/…" onChange={event => { setCombo({ ...combo, coverImage: event.target.value }); setCoverPreviewFailed(false); setCoverNotice('') }}/><small>Leave blank to show the products’ own images instead. Save changes after uploading or replacing a cover.</small></label>
+      <label>Cover image description — optional<input maxLength={180} value={combo.coverAlt || ''} onChange={event => setCombo({ ...combo, coverAlt: event.target.value })} placeholder="Describe the artwork for screen readers"/></label>
+      {combo.coverImage && isDealCoverUrl(combo.coverImage) && <div className="deal-cover-preview">{coverPreviewFailed ? <p role="alert">This image could not be loaded. Check the URL or upload an image file. Customers will see product images if the cover cannot load.</p> : <img src={combo.coverImage} alt={combo.coverAlt || `${combo.name || 'Combo'} cover preview`} onError={() => setCoverPreviewFailed(true)}/>}<div className="deal-cover-actions"><button type="button" className="button button-light" onClick={() => void downloadCover()} disabled={coverPreviewFailed}>{downloadingCover ? <Loader2 size={16} className="animate-spin"/> : <Download size={16}/>} Download cover</button><a className="button button-light" href={combo.coverImage} target="_blank" rel="noopener noreferrer">Open original <ArrowUpRight size={16}/></a><button type="button" className="button button-light" onClick={() => { setCombo({ ...combo, coverImage: '', coverAlt: '' }); setCoverNotice('Cover removed from this form. Save changes to update the website.'); setCoverPreviewFailed(false) }}>Remove cover</button></div></div>}
+      {coverNotice && <p className="deal-cover-help" role="status">{coverNotice}</p>}
     </div><div className="deals-product-picker"><h3>Products in this package</h3><label>Find an existing product<input value={productQuery} onChange={event => { setProductQuery(event.target.value); setSelectedProduct('') }} placeholder="Search by name or brand"/></label><div className="deals-picker-row"><select aria-label="Choose a product for this combo" value={selectedProduct} onChange={event => setSelectedProduct(event.target.value)}><option value="">Choose a product</option>{choices.map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}</select><button type="button" className="button button-dark" disabled={!selectedProduct} onClick={() => { setCombo({ ...combo, items: [...combo.items, { slug: selectedProduct, quantity: 1 }] }); setSelectedProduct(''); setProductQuery('') }}><Plus size={16}/> Add</button></div><small>Choose at least two distinct products. The public combo uses their existing catalogue images and names.</small>
       {combo.items.map(item => { const product = products.find(product => product.slug === item.slug); return <div className="deals-selected-product" key={item.slug}>{product && <img src={product.image} alt=""/>}<strong>{product?.name || `Unavailable product: ${item.slug}`}</strong><label>Quantity<input aria-label={`Quantity for ${product?.name || item.slug}`} type="number" min={1} max={99} step={1} required value={item.quantity} onChange={event => setCombo({ ...combo, items: combo.items.map(line => line.slug === item.slug ? { ...line, quantity: Number(event.target.value) } : line) })}/></label><button type="button" aria-label={`Remove ${product?.name || item.slug} from combo`} onClick={() => setCombo({ ...combo, items: combo.items.filter(line => line.slug !== item.slug) })}><X size={17}/></button></div> })}
     </div>{error && <p className="owner-error" role="alert">{error}</p>}<div className="owner-editor-actions"><button type="button" className="button button-light" onClick={() => setCombo(null)}>Cancel</button><button className="button button-dark" disabled={!ready}><Check size={16}/> {saving ? 'Publishing…' : 'Save changes'}</button></div></fieldset></form></div>}
