@@ -9,6 +9,7 @@ import { WhatsAppLink } from '../components/WhatsAppLink'
 import { NewsletterSignup } from '../components/NewsletterSignup'
 import { useCatalog } from '../context/CatalogContext'
 import { HomeCategoryCarousel } from '../components/HomeCategoryCarousel'
+import { HomeDealsBanner } from '../components/HomeDealsBanner'
 
 export function HomePage() {
   const { products, categories, brands } = useCatalog()
@@ -37,6 +38,7 @@ export function HomePage() {
       </section>
 
       <HomeCategoryCarousel categories={categories} products={products}/>
+      <HomeDealsBanner/>
 
       <section className="showroom-products">
         <div className="container showroom-section-heading">

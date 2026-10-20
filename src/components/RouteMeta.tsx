@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useCatalog } from '../context/CatalogContext'
 import { trackEvent } from '../lib/engagement'
 import { brandKey } from '../lib/brandStore'
+import { useDeals } from '../context/DealsContext'
 
 const defaultDescription =
   'Explore electrical materials, home appliances and electronics from A Kaycee Electricals in Ogba, Lagos.'
@@ -54,6 +55,7 @@ function setOpenGraph(property: string, content: string) {
 export function RouteMeta() {
   const { pathname } = useLocation()
   const { products, brands } = useCatalog()
+  const { liveCollections, liveCombos } = useDeals()
 
   useEffect(() => {
     if (!pathname.startsWith('/ak-owner-portal')) trackEvent('page_view')
@@ -66,11 +68,17 @@ export function RouteMeta() {
     let brandName = ''
     try { brandName = pathname.startsWith('/brand/') ? decodeURIComponent(pathname.slice('/brand/'.length)) : '' } catch { /* Invalid path stays unavailable. */ }
     const brand = brands.find(item => brandKey(item.name) === brandKey(brandName))
+    const dealParts = pathname.split('/').filter(Boolean)
+    const dealCollection = dealParts[0] === 'deals' ? liveCollections.find(item => item.id === dealParts[1]) : undefined
+    const dealCombo = dealCollection ? liveCombos.find(item => item.id === dealParts[2] && item.collectionId === dealCollection.id) : undefined
     const meta = product
       ? {
           title: `${product.name} | A Kaycee Electricals`,
           description: `${product.description} Enquire with the Ogba store team for current pricing and availability.`,
         }
+      : dealCombo ? { title: `${dealCombo.name} | A Kaycee Electricals`, description: dealCombo.description }
+      : dealCollection && dealParts.length === 2 ? { title: `${dealCollection.name} | A Kaycee Electricals`, description: dealCollection.description }
+      : pathname === '/deals' ? { title: 'Combo Deals | A Kaycee Electricals', description: 'Explore Student Deals, Odogwu Deals and thoughtfully paired appliance packages for your space.' }
       : brand ? { title: `${brand.name} Brand Store | A Kaycee Electricals`, description: `Explore ${brand.name} appliances and electronics at A Kaycee Electricals. Browse the collection and enquire on WhatsApp for current availability.` } : routeMeta[pathname] || {
           title: 'Page Not Found | A Kaycee Electricals',
           description: defaultDescription,
@@ -80,7 +88,7 @@ export function RouteMeta() {
     setMeta('description', meta.description)
     setOpenGraph('og:title', meta.title)
     setOpenGraph('og:description', meta.description)
-  }, [pathname, products, brands])
+  }, [pathname, products, brands, liveCollections, liveCombos])
 
   return null
 }

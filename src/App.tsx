@@ -17,12 +17,14 @@ import { MotionOrchestrator } from './components/MotionOrchestrator'
 import { CategoryPage } from './pages/CategoryPages'
 import { AuthRecoveryBridge } from './components/AuthRecoveryBridge'
 import { BrandPage } from './pages/BrandPage'
+import { DealsProvider } from './context/DealsContext'
+import { DealsPage } from './pages/DealsPage'
 const OwnerPortalPage = lazy(() => import('./pages/OwnerPortalPage').then(module => ({ default: module.OwnerPortalPage })))
 
 export default function App() {
   return (
     <CatalogProvider>
-      <AuthRecoveryBridge />
+      <DealsProvider><AuthRecoveryBridge />
       <ShopToolsProvider><QuoteCartProvider>
         <ScrollToTop />
         <MotionOrchestrator />
@@ -35,6 +37,9 @@ export default function App() {
             <Route path="/products/:slug" element={<ProductDetailPage />} />
             <Route path="/category/:categoryId" element={<CategoryPage />} />
             <Route path="/brand/:brandId" element={<BrandPage />} />
+            <Route path="/deals" element={<DealsPage />} />
+            <Route path="/deals/:collectionId" element={<DealsPage />} />
+            <Route path="/deals/:collectionId/:comboId" element={<DealsPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/saved" element={<SavedComparePage />} />
@@ -43,7 +48,7 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
-      </QuoteCartProvider></ShopToolsProvider>
+      </QuoteCartProvider></ShopToolsProvider></DealsProvider>
     </CatalogProvider>
   )
 }

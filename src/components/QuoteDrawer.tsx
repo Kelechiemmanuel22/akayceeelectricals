@@ -89,6 +89,7 @@ export function QuoteDrawer() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-gold-dark">{product.brand}</span>
                       <h4 className="truncate font-display text-sm font-bold tracking-tight text-ink">{product.name}</h4>
+                      {product.category === 'combo-deals' && <p className="mt-1 text-xs leading-relaxed text-ink/60">{product.specs.join(' · ')}</p>}
                       <div className="mt-2 flex items-center gap-3">
                         <div className="flex items-center rounded-lg border border-ink/15 bg-white">
                           <button

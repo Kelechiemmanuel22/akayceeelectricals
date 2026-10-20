@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowUpRight, BarChart3, Bell, ChevronRight, FolderTree, Grid2X2, Home, Image, Layers, LogOut, Mail, Menu, MessageSquare, Package, Search, Settings, ShieldCheck, X } from 'lucide-react'
 
-export type AdminSection = 'overview' | 'products' | 'categories' | 'subcategories' | 'brands' | 'analytics' | 'newsletter' | 'requests' | 'media' | 'team' | 'settings'
+export type AdminSection = 'overview' | 'products' | 'categories' | 'subcategories' | 'brands' | 'deals' | 'analytics' | 'newsletter' | 'requests' | 'media' | 'team' | 'settings'
 const items = [
   { id: 'overview', label: 'Overview', icon: Home, group: '' },
   { id: 'products', label: 'Products', icon: Package, group: 'Catalogue' },
   { id: 'categories', label: 'Categories', icon: Layers, group: 'Catalogue' },
   { id: 'subcategories', label: 'Subcategories', icon: FolderTree, group: 'Catalogue' },
   { id: 'brands', label: 'Brands', icon: Grid2X2, group: 'Catalogue' },
+  { id: 'deals', label: 'Combo deals', icon: Package, group: 'Catalogue' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Connect & grow', owner: true },
   { id: 'requests', label: 'Customer requests', icon: MessageSquare, group: 'Connect & grow', owner: true },
   { id: 'newsletter', label: 'Newsletter', icon: Mail, group: 'Connect & grow', owner: true },

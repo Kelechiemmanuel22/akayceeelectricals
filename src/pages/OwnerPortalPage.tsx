@@ -15,6 +15,7 @@ import { AdminMediaPanel, type AdminMediaItem } from '../components/AdminMediaPa
 import { AdminDraftProvider, useAdminDraftState, useDiscardAdminDraft } from '../components/AdminDraftProvider'
 import { clearAdminDrafts } from '../lib/adminDrafts'
 import { AdminForgotPassword } from '../components/AdminForgotPassword'
+import { AdminDealsPanel } from '../components/AdminDealsPanel'
 import '../admin.css'
 
 type ProductRow = {
@@ -394,6 +395,7 @@ function OwnerDashboard({ session, isOwner }: { session: Session; isOwner: boole
         {section === 'media' && <AdminMediaPanel items={mediaItems}/>}
         {section === 'team' && isOwner && <AdminTeamPanel />}
         {section === 'subcategories' && <AdminSubcategoriesPanel categories={categories} products={products} rows={managedSubcategories} enabled={subcategoriesEnabled} onSaved={load}/>}
+        {section === 'deals' && <AdminDealsPanel/>}
 
         {section === 'products' && <>
           <div className="owner-section-heading"><div><p className="eyebrow text-gold-dark">Products</p><h1>Published catalogue</h1><p>Add stock examples and assign each one to a category and brand.</p></div><button className="button button-dark" onClick={() => setCreating(true)}><PackagePlus size={17} /> Add product</button></div>

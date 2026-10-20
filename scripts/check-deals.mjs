@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { stripTypeScriptTypes } from 'node:module'
+
+const source = stripTypeScriptTypes(readFileSync(new URL('../src/lib/deals.ts', import.meta.url), 'utf8'))
+const deals = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+const { previewDeals, addPreviewPriceEstimates, collectionIsLive, comboIsAvailable, resolveCombo, comboQuoteProduct, validDealsData } = deals
+const collection = previewDeals.collections[0]
+const now = Date.parse('2026-10-20T12:00:00Z')
+assert.equal(validDealsData(previewDeals), true)
+assert.equal(validDealsData({ collections: [], combos: [{}] }), false)
+assert.equal(validDealsData({ ...previewDeals, enabled: false }), true)
+assert.equal(validDealsData({ ...previewDeals, enabled: 'false' }), false)
+assert.equal(validDealsData({ collections: previewDeals.collections, combos: previewDeals.combos }), true, 'Keep older previews compatible')
+assert.equal(collectionIsLive(collection, now), true)
+assert.equal(collectionIsLive({ ...collection, active: false }, now), false)
+assert.equal(collectionIsLive({ ...collection, startsAt: '2026-12-01T00:00:00Z' }, now), false)
+assert.equal(collectionIsLive({ ...collection, endsAt: '2026-10-19T00:00:00Z' }, now), false)
+assert.equal(collectionIsLive({ ...collection, endsAt: '2026-10-20T12:00:00Z' }, now), false)
+assert.equal(collectionIsLive({ ...collection, startsAt: 'invalid' }, now), false)
+const combo = { ...previewDeals.combos[0], items: previewDeals.combos[0].items.map((item, i) => ({ ...item, quantity: i + 1 })) }
+const products = combo.items.map(item => ({ slug: item.slug, name: item.slug, category: 'test', brand: 'Test', description: 'Test', specs: [], image: '/test.jpg' }))
+assert.equal(comboIsAvailable(combo, products), true)
+assert.equal(comboIsAvailable(combo, products.slice(1)), false)
+assert.equal(comboIsAvailable({ ...combo, active: false }, products), false)
+assert.equal(comboIsAvailable({ ...combo, items: [{ ...combo.items[0], quantity: 0 }] }, products), false)
+assert.equal(resolveCombo(combo, products).length, 2)
+const quote = comboQuoteProduct(combo, collection, products)
+assert.equal(quote.slug, 'combo:campus-comfort')
+assert.equal(quote.category, 'combo-deals')
+assert.equal(quote.price, 245000)
+assert.equal(quote.priceIsEstimate, true)
+assert.ok(quote.specs[1].startsWith('2 × '))
+assert.equal(previewDeals.collections.find(item => item.id === 'festive-deals').active, false)
+const allProducts = [...new Set(previewDeals.combos.flatMap(combo => combo.items.map(item => item.slug)))].map(slug => ({ slug, name: slug, category: 'test', brand: 'Test', description: 'Test', specs: [], image: '/test.jpg' }))
+const shownCollections = data => data.enabled === false ? [] : data.collections.filter(collection => collectionIsLive(collection, now) && data.combos.some(combo => combo.collectionId === collection.id && comboIsAvailable(combo, allProducts))).map(collection => collection.id)
+assert.deepEqual(shownCollections(previewDeals), ['student-deals', 'odogwu-deals'])
+assert.deepEqual(shownCollections({ ...previewDeals, enabled: false }), [])
+const masterOff = { ...previewDeals, enabled: false }
+assert.deepEqual(masterOff.combos, previewDeals.combos, 'Master switch must not change package settings')
+assert.deepEqual(shownCollections({ ...masterOff, enabled: true }), ['student-deals', 'odogwu-deals'])
+assert.deepEqual(shownCollections({ ...previewDeals, collections: previewDeals.collections.map(collection => collection.id === 'student-deals' ? { ...collection, active: false } : collection) }), ['odogwu-deals'])
+assert.deepEqual(shownCollections({ ...previewDeals, combos: previewDeals.combos.map(combo => combo.id === 'campus-comfort' ? { ...combo, active: false } : combo) }), ['student-deals', 'odogwu-deals'])
+assert.deepEqual(shownCollections({ ...previewDeals, combos: previewDeals.combos.map(combo => combo.collectionId === 'student-deals' ? { ...combo, active: false } : combo) }), ['odogwu-deals'])
+const oldPreview = { ...previewDeals, combos: previewDeals.combos.map(({ priceIsEstimate, ...item }) => ({ ...item, price: null })) }
+assert.deepEqual(addPreviewPriceEstimates(oldPreview).combos.map(item => item.price), [245000, 340000, 2390000, 1600000])
+assert.equal(oldPreview.combos[0].price, null, 'Do not mutate stored data')
+assert.equal(addPreviewPriceEstimates({ ...oldPreview, combos: [{ ...oldPreview.combos[0], price: 123000 }] }).combos[0].price, 123000, 'Preserve owner-set prices')
+assert.equal(addPreviewPriceEstimates({ ...oldPreview, combos: [{ ...oldPreview.combos[0], priceIsEstimate: false }] }).combos[0].price, null, 'Preserve an intentionally cleared price')
+assert.equal(addPreviewPriceEstimates({ ...oldPreview, combos: [{ ...oldPreview.combos[0], items: [{ ...oldPreview.combos[0].items[0], quantity: 2 }, oldPreview.combos[0].items[1]] }] }).combos[0].price, null, 'Do not estimate a modified bundle using old contents')
+console.log('Deals checks passed: visibility, scheduling, missing products, bundle quantities and quote details.')

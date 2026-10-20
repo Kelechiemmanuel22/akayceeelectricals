@@ -83,6 +83,10 @@ export function QuoteCartProvider({ children }: { children: React.ReactNode }) {
     let message = `Hello A Kaycee Electricals,\n\nI would like to request a quote / availability check for the following items:\n\n`
     items.forEach((item, index) => {
       message += `${index + 1}. *${item.product.name}* (Brand: ${item.product.brand}) — Qty: ${item.quantity}\n`
+      if (item.product.category === 'combo-deals') {
+        message += `   Each package includes:\n${item.product.specs.map(line => `   • ${line}`).join('\n')}\n`
+        if (item.product.price != null) message += `   ${item.product.priceIsEstimate ? 'Estimated preview price' : 'Listed price'} per package: NGN ${item.product.price.toLocaleString('en-NG')} (please confirm)\n`
+      }
     })
 
     if (customerNote && customerNote.trim()) {

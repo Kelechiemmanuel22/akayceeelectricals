@@ -9,6 +9,7 @@ import { QuoteDrawer } from './QuoteDrawer'
 import { useQuoteCart } from '../context/QuoteCartContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useShopTools } from '../context/ShopToolsContext'
+import { useDeals } from '../context/DealsContext'
 
 export function SiteLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -17,6 +18,8 @@ export function SiteLayout() {
   const { setIsOpen: setQuoteDrawerOpen, totalCount } = useQuoteCart()
   const { saved, compared } = useShopTools()
   const { categories } = useCatalog()
+  const { liveCollections } = useDeals()
+  const visibleNavLinks = navLinks.filter(link => link.to !== '/deals' || liveCollections.length > 0)
   const close = () => { setMenuOpen(false); setCategoriesOpen(false) }
   useEffect(() => {
     // Leave the opening composition untouched, then turn the same header into
@@ -48,7 +51,7 @@ export function SiteLayout() {
             <button onClick={close} className="mobile-menu-close" aria-label="Close navigation menu"><X size={22}/></button>
           </div>
           <nav className="mobile-menu-nav" aria-label="Main navigation">
-            {navLinks.map((link) => link.label === 'Categories' ? (
+            {visibleNavLinks.map((link) => link.label === 'Categories' ? (
               <div className={`mobile-category-menu ${categoriesOpen ? 'open' : ''}`} key={link.label}>
                 <button type="button" className="category-menu-trigger" aria-expanded={categoriesOpen} onClick={() => setCategoriesOpen((open) => !open)}>
                   <span>Categories</span><ChevronDown size={21}/>
@@ -86,6 +89,7 @@ export function SiteLayout() {
 
 function Footer() {
   const { categories } = useCatalog()
+  const { liveCollections } = useDeals()
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
@@ -97,7 +101,7 @@ function Footer() {
             <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noreferrer" className="footer-social-link"><WhatsAppIcon className="size-4"/><span>WhatsApp Store</span></a>
           </div>
         </div>
-        <FooterList title="Explore" links={navLinks.filter((link) => link.label !== 'Categories').map(({ to, label }) => ({ label, to }))}/>
+        <FooterList title="Explore" links={navLinks.filter((link) => link.label !== 'Categories' && (link.to !== '/deals' || liveCollections.length > 0)).map(({ to, label }) => ({ label, to }))}/>
         <FooterList title="Categories" links={categories.slice(0, 6).map((item) => ({ label: item.name, to: `/category/${item.id}` }))}/>
         <div className="footer-contact">
           <p className="footer-label">Store & Contact</p>
